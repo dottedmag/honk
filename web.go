@@ -2528,7 +2528,7 @@ var workinprogress = 0
 
 func exitSignalHandler() {
 	sig := make(chan os.Signal)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	<-sig
 	ilog.Printf("stopping...")
 	for i := 0; i < workinprogress; i++ {
