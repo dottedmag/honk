@@ -156,37 +156,6 @@ func homepage(w http.ResponseWriter, r *http.Request) {
 	honkpage(w, u, honks, templinfo)
 }
 
-func showfunzone(w http.ResponseWriter, r *http.Request) {
-	var emunames, memenames []string
-	emuext := make(map[string]string)
-	dir, err := os.Open(dataDir + "/emus")
-	if err == nil {
-		emunames, _ = dir.Readdirnames(0)
-		dir.Close()
-	}
-	for i, e := range emunames {
-		if len(e) > 4 {
-			emunames[i] = e[:len(e)-4]
-			emuext[emunames[i]] = e[len(e)-4:]
-		}
-	}
-	dir, err = os.Open(dataDir + "/memes")
-	if err == nil {
-		memenames, _ = dir.Readdirnames(0)
-		dir.Close()
-	}
-	sort.Strings(emunames)
-	sort.Strings(memenames)
-	templinfo := getInfo(r)
-	templinfo["Emus"] = emunames
-	templinfo["Emuext"] = emuext
-	templinfo["Memes"] = memenames
-	err = readviews.Execute(w, "funzone.html", templinfo)
-	if err != nil {
-		elog.Print(err)
-	}
-}
-
 func showrss(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
@@ -2607,7 +2576,6 @@ func serve() {
 		viewDir+"/views/honk.html",
 		viewDir+"/views/account.html",
 		viewDir+"/views/about.html",
-		viewDir+"/views/funzone.html",
 		viewDir+"/views/login.html",
 		viewDir+"/views/xzone.html",
 		viewDir+"/views/msg.html",
@@ -2691,7 +2659,6 @@ func serve() {
 	LoggedInRouter.Handle("/sendchonk", login.CSRFWrap("sendchonk", http.HandlerFunc(submitchonk)))
 	LoggedInRouter.HandleFunc("/saved", homepage)
 	LoggedInRouter.HandleFunc("/account", accountpage)
-	LoggedInRouter.HandleFunc("/funzone", showfunzone)
 	LoggedInRouter.HandleFunc("/chpass", dochpass)
 	LoggedInRouter.HandleFunc("/atme", homepage)
 	LoggedInRouter.HandleFunc("/longago", homepage)
