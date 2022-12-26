@@ -17,30 +17,7 @@ package main
 
 import (
 	"syscall"
-	"time"
 )
-
-type Sensors struct {
-	Memory float64
-	Uptime float64
-	CPU    float64
-}
-
-var boottime = time.Now()
-
-func getSensors() Sensors {
-	var usage syscall.Rusage
-	syscall.Getrusage(syscall.RUSAGE_SELF, &usage)
-
-	now := time.Now()
-
-	var sensors Sensors
-	sensors.Memory = float64(usage.Maxrss) / 1024.0
-	sensors.Uptime = now.Sub(boottime).Seconds()
-	sensors.CPU = time.Duration(usage.Utime.Nano()).Seconds()
-
-	return sensors
-}
 
 func setLimits() error {
 	var limit syscall.Rlimit

@@ -2282,9 +2282,6 @@ func servehtml(w http.ResponseWriter, r *http.Request) {
 	templinfo["AboutMsg"] = aboutMsg
 	templinfo["LoginMsg"] = loginMsg
 	templinfo["HonkVersion"] = softwareVersion
-	if r.URL.Path == "/about" {
-		templinfo["Sensors"] = getSensors()
-	}
 	if u == nil && !develMode {
 		w.Header().Set("Cache-Control", "max-age=60")
 	}
