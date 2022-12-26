@@ -51,6 +51,6 @@ Then run honk.
 
 -- upgrade
 
-old-honk backup `date +backup-%F`
+./honk-backup `date +backup-%F`
 ./honk upgrade
 ./honk

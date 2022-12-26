@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+mkdir -p "$1"
+sqlite3 -readonly honk.db ".backup '$1/honk.db'"
+sqlite3 -readonly blob.db ".backup '$1/blob.db'"
