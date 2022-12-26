@@ -20,7 +20,6 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -2597,7 +2596,6 @@ func serve() {
 	}
 
 	mux := mux.NewRouter()
-	mux.NotFoundHandler = http.HandlerFunc(serveStaticSiteInstead)
 	mux.Use(login.Checker)
 	mux.Handle("/api", login.TokenRequired(http.HandlerFunc(apihandler)))
 
@@ -2703,12 +2701,4 @@ func redirect(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, target,
 		// see @andreiavrammsd comment: often 307 > 301
 		http.StatusTemporaryRedirect)
-}
-
-var webRoot = flag.String("www.root", "/var/www/benjojo.co.uk", "Where you want to serve your actual website from (that isnt honk)")
-var tlsRoot = flag.String("tls.names", "benjojo.co.uk,www.benjojo.co.uk", "What to lets encrypt for")
-var tlsEmail = flag.String("tls.email", "www@benjojo.co.uk", "What email to tell let's encrypt")
-
-func serveStaticSiteInstead(w http.ResponseWriter, r *http.Request) {
-	http.FileServer(http.FS(os.DirFS(*webRoot))).ServeHTTP(w, r)
 }
