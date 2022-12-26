@@ -17,9 +17,7 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"crypto/sha512"
-	"crypto/tls"
 	"database/sql"
 	"encoding/hex"
 	"flag"
@@ -43,7 +41,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/crypto/acme/autocert"
 	"humungus.tedunangst.com/r/webs/cache"
 	"humungus.tedunangst.com/r/webs/httpsig"
 	"humungus.tedunangst.com/r/webs/junk"
@@ -2551,12 +2548,11 @@ func extractViewsToTmpDir() {
 func serve() {
 	db := opendatabase()
 	login.Init(login.InitArgs{Db: db, Logger: ilog, Insecure: develMode})
-	// login.Init(login.InitArgs{Db: db, Logger: ilog, Insecure: true})
 
-	// listener, err := openListener()
-	// if err != nil {
-	// 	elog.Fatal(err)
-	// }
+	listener, err := openListener()
+	if err != nil {
+		elog.Fatal(err)
+	}
 	runBackendServer()
 	go exitSignalHandler()
 	go redeliveryLoop()
@@ -2690,22 +2686,10 @@ func serve() {
 		WriteTimeout: 300 * time.Second,
 		IdleTimeout:  120 * time.Second,
 		Handler:      mux,
-		Addr:         ":443",
 	}
 
-	hListener := setupSSLConfig(hserver, httpHandler)
-	go func() {
-		s := &http.Server{
-			Handler: hListener,
-			Addr:    fmt.Sprintf(":%d", 80),
-		}
-
-		go s.ListenAndServe()
-	}()
-
-	err := hserver.ListenAndServeTLS("", "")
-	if err != nil {
-		elog.Fatalf("httpsSrv.ListendAndServeTLS() failed with %s", err)
+	if err := hserver.Serve(listener); err != nil {
+		elog.Fatalf("Listen() failed with %s", err)
 	}
 }
 
@@ -2727,36 +2711,4 @@ var tlsEmail = flag.String("tls.email", "www@benjojo.co.uk", "What email to tell
 
 func serveStaticSiteInstead(w http.ResponseWriter, r *http.Request) {
 	http.FileServer(http.FS(os.DirFS(*webRoot))).ServeHTTP(w, r)
-}
-
-func setupSSLConfig(httpsSrv *http.Server, httpMux *http.ServeMux) (handler http.Handler) {
-	getcertFunction, httpHandler := getNormalACMEConfig(httpMux)
-
-	//Only enable cert failover logic where a cert is provided.
-	httpsSrv.TLSConfig = &tls.Config{GetCertificate: getcertFunction, MinVersion: tls.VersionTLS12}
-	return httpHandler
-}
-
-func getNormalACMEConfig(httpMux *http.ServeMux) (h func(*tls.ClientHelloInfo) (*tls.Certificate, error), handler http.Handler) {
-	// Note: use a sensible value for data directory
-	// this is where cached certificates are stored
-	dataDir := "."
-	hostPolicy := func(ctx context.Context, host string) error {
-		for _, name := range strings.Split(*tlsRoot, ",") {
-			if name == host {
-				return nil
-			}
-		}
-
-		return fmt.Errorf("acme/autocert: only %v host is allowed", tlsRoot)
-	}
-
-	m := &autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: hostPolicy,
-		Cache:      autocert.DirCache(dataDir),
-		Email:      *tlsEmail,
-	}
-
-	return m.GetCertificate, m.HTTPHandler(httpMux)
 }
