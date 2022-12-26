@@ -2103,7 +2103,7 @@ func dochpass(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/account", http.StatusSeeOther)
 }
 
-func fingerlicker(w http.ResponseWriter, r *http.Request) {
+func webfinger(w http.ResponseWriter, r *http.Request) {
 	orig := r.FormValue("resource")
 
 	dlog.Printf("finger lick: %s", orig)
@@ -2621,7 +2621,7 @@ func serve() {
 	GetSubrouter.HandleFunc("/d/{xid:[\\pL[:digit:].]+}", servefile)
 	GetSubrouter.HandleFunc("/emu/{emu:[^.]*[^/]+}", serveemu)
 	GetSubrouter.HandleFunc("/meme/{meme:[^.]*[^/]+}", servememe)
-	GetSubrouter.HandleFunc("/.well-known/webfinger", fingerlicker)
+	GetSubrouter.HandleFunc("/.well-known/webfinger", webfinger)
 	GetSubrouter.Handle("/metrics-honk", promhttp.Handler())
 	calculateFollowersForMetrics()
 	GetSubrouter.HandleFunc("/flag/{code:.+}", showflag)
