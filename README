@@ -1,11 +1,12 @@
-honk-benjojo
-===
+honk-dottedmag
+==============
 
-Remix of honk. has the following improvments 
+Remix of honk-benjojo, further remix of honk.
+
+honk-benjojo changes:
 
 0) / is a file server, rather than honk, access by /honk
- (You can co-exist with your static site!), TLS is now supported
- directly via golang's autocert (aka letsencrypt)
+ (You can co-exist with your static site!)
 1) Avatar support
 2) Twitter-like styles, less purple
 3) Source code has functions I've tried to understand renamed
@@ -28,22 +29,11 @@ Spend more time using the software and less time operating it.
 No attention mining.
 No likes, no faves, no polls, no stars, no claps, no counts.
 
-Purple color scheme. Custom emus. Memes too.
-Avatars automatically assigned by the NSA.
-
-The button to submit a new honk says "it's gonna be honked".
-
-The honk mission is to work well if it's what you want.
-This does not imply the goal is to be what you want.
-
 -- build
 
-It should be sufficient to type make after unpacking a release.
-You'll need a go compiler version 1.16 or later. And libsqlite3.
+Go, libsqlite3-dev.
 
-Even on a fast machine, building from source can take several seconds.
-
-Development sources: hg clone https://humungus.tedunangst.com/r/honk
+make
 
 -- setup
 
@@ -64,28 +54,3 @@ Then run honk.
 old-honk backup `date +backup-%F`
 ./honk upgrade
 ./honk
-
--- documentation
-
-There is a more complete incomplete manual. This is just the README.
-
--- guidelines
-
-One honk per day, or call it an "eighth-tenth" honk.
-If your honk frequency changes, so will the number of honks.
-
-The honk should be short, but not so short that you cannot identify it.
-
-The honk is an animal sign of respect and should be accompanied by a
-friendly greeting or a nod.
-
-The honk should be done from a seat and in a safe area.
-
-It is considered rude to make noise in a place of business.
-
-The honk may be made on public property only when the person doing
-the honk has the permission of the owner of that property.
-
--- disclaimer
-
-Do not use honk to contact emergency services.
