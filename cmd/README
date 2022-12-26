@@ -1,0 +1,13 @@
+These are all standalone programs, meant to be compiled individually.
+
+A little of this, a little of that.
+
+autobonker - repeats mentioned posts
+
+gettoken - obtains an authorization token
+
+saytheday - posts a new honk that's a date based look and say sequence
+
+sprayandpray - send an activity with no error checking and hope it works
+
+youvegothonks - polls for new messages
