@@ -34,13 +34,13 @@ var replyingto = cascadia.MustCompile(".ReplyingToContextBelowAuthor")
 var imgsel = cascadia.MustCompile("div.js-adaptive-photo img")
 var authorregex = regexp.MustCompile("twitter.com/([^/]+)")
 
-var re_hoots = regexp.MustCompile(`hoot: ?https://\S+`)
+var re_tweets = regexp.MustCompile(`tweet: ?https://\S+`)
 var re_removepics = regexp.MustCompile(`pic\.twitter\.com/[[:alnum:]]+`)
 
-func hootextractor(r io.Reader, url string, seen map[string]bool) string {
+func tweetExtractor(r io.Reader, url string, seen map[string]bool) string {
 	root, err := html.Parse(r)
 	if err != nil {
-		elog.Printf("error parsing hoot: %s", err)
+		elog.Printf("error parsing tweet: %s", err)
 		return url
 	}
 
@@ -110,20 +110,20 @@ func hootextractor(r io.Reader, url string, seen map[string]bool) string {
 	return buf.String()
 }
 
-func hooterize(noise string) string {
+func tweeterize(noise string) string {
 	seen := make(map[string]bool)
 
-	hootfetcher := func(hoot string) string {
-		url := hoot[5:]
+	tweetFetcher := func(tweet string) string {
+		url := tweet[5:]
 		if url[0] == ' ' {
 			url = url[1:]
 		}
 		url = strings.Replace(url, "mobile.twitter.com", "twitter.com", -1)
-		dlog.Printf("hooterizing %s", url)
+		dlog.Printf("tweeterizing %s", url)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			ilog.Printf("error: %s", err)
-			return hoot
+			return tweet
 		}
 		req.Header.Set("User-Agent", "Bot")
 		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -131,17 +131,17 @@ func hooterize(noise string) string {
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			ilog.Printf("error: %s", err)
-			return hoot
+			return tweet
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
 			ilog.Printf("error getting %s: %d", url, resp.StatusCode)
-			return hoot
+			return tweet
 		}
-		ld, _ := os.Create("lasthoot.html")
+		ld, _ := os.Create("last_tweet.html")
 		r := io.TeeReader(resp.Body, ld)
-		return hootextractor(r, url, seen)
+		return tweetExtractor(r, url, seen)
 	}
 
-	return re_hoots.ReplaceAllStringFunc(noise, hootfetcher)
+	return re_tweets.ReplaceAllStringFunc(noise, tweetFetcher)
 }

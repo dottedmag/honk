@@ -1715,7 +1715,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 
 	noise = strings.Replace(noise, "\r", "", -1)
 	noise = quickrename(noise, userinfo.UserID)
-	noise = hooterize(noise)
+	noise = tweeterize(noise)
 	honk.Noise = noise
 	translate(honk)
 
