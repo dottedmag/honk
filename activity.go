@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html"
 	"io"
@@ -31,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ridge/must/v2"
+	"github.com/ridge/tj"
 	"humungus.tedunangst.com/r/webs/cache"
 	"humungus.tedunangst.com/r/webs/gate"
 	"humungus.tedunangst.com/r/webs/httpsig"
@@ -1060,35 +1063,37 @@ func dumpactivity(item junk.Junk) {
 
 func rubadubdub(user *WhatAbout, req junk.Junk) {
 	actor, _ := req.GetString("actor")
-	j := junk.New()
-	j["@context"] = atContextString
-	j["id"] = user.URL + "/dub/" + make18CharRandomString()
-	j["type"] = "Accept"
-	j["actor"] = user.URL
-	j["to"] = actor
-	j["published"] = time.Now().UTC().Format(time.RFC3339)
-	j["object"] = req
+	j := tj.O{
+		"@context":  atContextString,
+		"id":        user.URL + "/dub/" + make18CharRandomString(),
+		"type":      "Accept",
+		"actor":     user.URL,
+		"to":        actor,
+		"published": time.Now().UTC().Format(time.RFC3339),
+		"object":    req,
+	}
 
-	deliverate(0, user.ID, actor, j.ToBytes(), true)
+	deliverate(0, user.ID, actor, must.OK1(json.Marshal(j)), true)
 }
 
 func itakeitallback(user *WhatAbout, xid string, owner string, folxid string) {
-	j := junk.New()
-	j["@context"] = atContextString
-	j["id"] = user.URL + "/unsub/" + folxid
-	j["type"] = "Undo"
-	j["actor"] = user.URL
-	j["to"] = owner
-	f := junk.New()
-	f["id"] = user.URL + "/sub/" + folxid
-	f["type"] = "Follow"
-	f["actor"] = user.URL
-	f["to"] = owner
-	f["object"] = xid
-	j["object"] = f
-	j["published"] = time.Now().UTC().Format(time.RFC3339)
+	j := tj.O{
+		"@context": atContextString,
+		"id":       user.URL + "/unsub/" + folxid,
+		"type":     "Undo",
+		"actor":    user.URL,
+		"to":       owner,
+		"object": tj.O{
+			"id":     user.URL + "/sub/" + folxid,
+			"type":   "Follow",
+			"actor":  user.URL,
+			"to":     owner,
+			"object": xid,
+		},
+		"published": time.Now().UTC().Format(time.RFC3339),
+	}
 
-	deliverate(0, user.ID, owner, j.ToBytes(), true)
+	deliverate(0, user.ID, owner, must.OK1(json.Marshal(j)), true)
 }
 
 func subsub(user *WhatAbout, xid string, owner string, folxid string) {
