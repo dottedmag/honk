@@ -49,8 +49,6 @@ servername: (public DNS name: honk.example.com)
 Then run honk.
 ./honk
 
--- upgrade
+-- backup
 
 ./honk-backup `date +backup-%F`
-./honk upgrade
-./honk

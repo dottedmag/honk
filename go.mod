@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/andybalholm/cascadia v1.3.1
+	github.com/dottedmag/sqv v0.0.0-20220620211640-a99c1faee86f
 	github.com/gorilla/mux v1.8.0
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/prometheus/client_golang v1.14.0

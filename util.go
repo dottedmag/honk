@@ -17,6 +17,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
@@ -27,7 +28,6 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 	_ "humungus.tedunangst.com/r/go-sqlite3"
@@ -59,48 +59,13 @@ var alreadyopendb *sql.DB
 var stmtConfig *sql.Stmt
 
 func initdb() {
-	dbname := dataDir + "/honk.db"
-	_, err := os.Stat(dbname)
-	if err == nil {
-		elog.Fatalf("%s already exists", dbname)
-	}
-	db, err := sql.Open("sqlite3", dbname)
-	if err != nil {
-		elog.Fatal(err)
-	}
-	alreadyopendb = db
-	defer func() {
-		os.Remove(dbname)
-		os.Exit(1)
-	}()
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		fmt.Printf("\n")
-		os.Remove(dbname)
-		os.Exit(1)
-	}()
-
-	_, err = db.Exec("PRAGMA journal_mode=WAL")
-	if err != nil {
-		elog.Print(err)
-		return
-	}
-	for _, line := range strings.Split(sqlSchema, ";") {
-		_, err = db.Exec(line)
-		if err != nil {
-			elog.Print(err)
-			return
-		}
-	}
-	r := bufio.NewReader(os.Stdin)
-
-	initblobdb()
+	db := opendatabase()
+	_ = openblobdb()
 
 	prepareStatements(db)
 
-	err = createuser(db, r)
+	r := bufio.NewReader(os.Stdin)
+	err := createuser(db, r)
 	if err != nil {
 		elog.Print(err)
 		return
@@ -140,7 +105,6 @@ func initdb() {
 	rand.Read(randbytes[:])
 	key := fmt.Sprintf("%x", randbytes)
 	setConfigValue("csrfkey", key)
-	setConfigValue("dbversion", myVersion)
 
 	setConfigValue("servermsg", "<h2>Things happen.</h2>")
 	setConfigValue("aboutmsg", "<h3>What is honk?</h3><p>Honk is amazing!")
@@ -150,40 +114,6 @@ func initdb() {
 	db.Close()
 	fmt.Printf("done.\n")
 	os.Exit(0)
-}
-
-func initblobdb() {
-	blobdbname := dataDir + "/blob.db"
-	_, err := os.Stat(blobdbname)
-	if err == nil {
-		elog.Fatalf("%s already exists", blobdbname)
-	}
-	blobdb, err := sql.Open("sqlite3", blobdbname)
-	if err != nil {
-		elog.Print(err)
-		return
-	}
-	_, err = blobdb.Exec("PRAGMA journal_mode=WAL")
-	if err != nil {
-		elog.Print(err)
-		return
-	}
-	_, err = blobdb.Exec("create table filedata (xid text, media text, hash text, content blob)")
-	if err != nil {
-		elog.Print(err)
-		return
-	}
-	_, err = blobdb.Exec("create index idx_filexid on filedata(xid)")
-	if err != nil {
-		elog.Print(err)
-		return
-	}
-	_, err = blobdb.Exec("create index idx_filehash on filedata(hash)")
-	if err != nil {
-		elog.Print(err)
-		return
-	}
-	blobdb.Close()
 }
 
 func adduser() {
@@ -361,13 +291,15 @@ func opendatabase() *sql.DB {
 		return alreadyopendb
 	}
 	dbname := dataDir + "/honk.db"
-	_, err := os.Stat(dbname)
-	if err != nil {
-		elog.Fatalf("unable to open database: %s", err)
-	}
 	db, err := sql.Open("sqlite3", dbname)
 	if err != nil {
 		elog.Fatalf("unable to open database: %s", err)
+	}
+	if _, err := db.Exec("pragma journal_mode = wal"); err != nil {
+		elog.Fatal(err)
+	}
+	if err := upgradeDB(context.Background(), db); err != nil {
+		elog.Fatal("Unable to upgrade database: ", err)
 	}
 	stmtConfig, err = db.Prepare("select value from config where key = ?")
 	if err != nil {
@@ -379,13 +311,15 @@ func opendatabase() *sql.DB {
 
 func openblobdb() *sql.DB {
 	blobdbname := dataDir + "/blob.db"
-	_, err := os.Stat(blobdbname)
-	if err != nil {
-		elog.Fatalf("unable to open database: %s", err)
-	}
 	db, err := sql.Open("sqlite3", blobdbname)
 	if err != nil {
 		elog.Fatalf("unable to open database: %s", err)
+	}
+	if _, err := db.Exec("pragma journal_mode = wal"); err != nil {
+		elog.Fatal(err)
+	}
+	if err := upgradeBlobDB(context.Background(), db); err != nil {
+		elog.Fatal("Unable to upgrade blob database: ", err)
 	}
 	return db
 }
@@ -448,4 +382,15 @@ func openListener() (net.Listener, error) {
 		os.Chmod(listenAddr, 0777)
 	}
 	return listener, nil
+}
+
+type dbexecer interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+}
+
+func sqlMustQuery(db dbexecer, s string, args ...interface{}) {
+	_, err := db.Exec(s, args...)
+	if err != nil {
+		elog.Fatalf("can't run %s: %s", s, err)
+	}
 }

@@ -36,9 +36,6 @@ import (
 	"humungus.tedunangst.com/r/webs/mz"
 )
 
-//go:embed schema.sql
-var sqlSchema string
-
 func userfromrow(row *sql.Row) (*UserProfile, error) {
 	user := new(UserProfile)
 	var seckey, options string

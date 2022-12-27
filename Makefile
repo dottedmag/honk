@@ -1,7 +1,6 @@
-
 all: honk
 
-honk: schema.sql *.go go.mod
+honk: *.go go.mod
 	go build -o honk
 
 clean:

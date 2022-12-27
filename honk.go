@@ -308,18 +308,18 @@ func main() {
 	switch cmd {
 	case "init":
 		initdb()
-	case "upgrade":
-		upgradedb()
 	case "version":
 		fmt.Println(softwareVersion)
 		os.Exit(0)
 	}
+
 	db := opendatabase()
-	dbversion := 0
-	getConfigValue("dbversion", &dbversion)
-	if dbversion != myVersion {
-		elog.Fatal("incorrect database version. run upgrade.")
+
+	var listenAddr string
+	if getConfigValue("listenaddr", &listenAddr) != nil || listenAddr == "" {
+		elog.Fatal("honk is not initialized. run honk init")
 	}
+
 	getConfigValue("servermsg", &serverMsg)
 	getConfigValue("aboutmsg", &aboutMsg)
 	getConfigValue("loginmsg", &loginMsg)
