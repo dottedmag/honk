@@ -1,29 +1,29 @@
 * Split user and public services
 * Renames
-  * bonk
   * chonk
   * convoy
   * crappola
+  * deliverate
   * demoji
   * donk
   * doover
+  * dub
   * emu
   * endoftheworld
+  * friendorfoe
+  * grapevine
   * hfcs
   * honk
   * honker (subscribed?)
-  * ont
-  * xonk
-  * zonk
-  * osmosis
-  * lingo
-  * reverbolate
   * imaginate
-  * grapevine
+  * lingo
   * memetize
+  * ont
+  * osmosis
+  * reverbolate
+  * wonk
+  * xonk
   * zaggie
-  * deliverate
-  * dub
-  * friendorfoe
+  * zonk
 * Redo image shrinker
 * Replace web/junk with tj

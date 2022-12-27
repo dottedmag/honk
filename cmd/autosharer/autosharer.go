@@ -58,11 +58,11 @@ func gethonks(server, token string, wanted int) HonkSet {
 	return honks
 }
 
-func bonk(server, token string, honk Honk) {
-	log.Printf("bonking %s from %s", honk.XID, honk.Honker)
+func share(server, token string, honk Honk) {
+	log.Printf("sharing %s from %s", honk.XID, honk.Honker)
 	form := make(url.Values)
 	form.Add("action", "zonkit")
-	form.Add("wherefore", "bonk")
+	form.Add("wherefore", "share")
 	form.Add("what", honk.XID)
 	apiurl := fmt.Sprintf("https://%s/api", server)
 	req, err := http.NewRequest("POST", apiurl, strings.NewReader(form.Encode()))
@@ -99,7 +99,7 @@ func main() {
 	for {
 		honks := gethonks(server, token, wanted)
 		for i, h := range honks.Honks {
-			bonk(server, token, h)
+			share(server, token, h)
 			if i > 0 {
 				time.Sleep(3 * time.Second)
 			}

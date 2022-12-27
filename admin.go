@@ -75,7 +75,7 @@ func adminscreen() {
 			oneline: true,
 		},
 	}
-	for _, l := range []string{"honked", "bonked", "honked back", "qonked", "evented"} {
+	for _, l := range []string{"honked", "shared", "honked back", "qonked", "evented"} {
 		messages = append(messages, &adminfield{
 			name:    "lingo-" + strings.ReplaceAll(l, " ", ""),
 			label:   "lingo for " + l,

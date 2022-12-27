@@ -24,16 +24,16 @@ function get(url, whendone, whentimedout) {
 	}
 	x.send()
 }
-function bonk(el, xid) {
-	el.innerHTML = "bonked"
+function share(el, xid) {
+	el.innerHTML = "shared"
 	el.disabled = true
-	post("/bonk", encode({"js": "2", "CSRF": csrftoken, "xid": xid}))
+	post("/share", encode({"js": "2", "CSRF": csrftoken, "xid": xid}))
 	return false
 }
-function unbonk(el, xid) {
-	el.innerHTML = "unbonked"
+function unshare(el, xid) {
+	el.innerHTML = "unshared"
 	el.disabled = true
-	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "unbonk", "what": xid}))
+	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "unshare", "what": xid}))
 }
 function muteit(el, convoy) {
 	el.innerHTML = "muted"

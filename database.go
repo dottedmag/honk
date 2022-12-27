@@ -181,8 +181,8 @@ func getActivityPubActivity(userid int64, xid string) *ActivityPubActivity {
 	return scanhonk(row)
 }
 
-func getbonk(userid int64, xid string) *ActivityPubActivity {
-	row := stmtOneBonk.QueryRow(userid, xid)
+func getShare(userid int64, xid string) *ActivityPubActivity {
+	row := stmtOneShare.QueryRow(userid, xid)
 	return scanhonk(row)
 }
 
@@ -1107,7 +1107,7 @@ var stmtAnyXonk, stmtOneActivityPubActivity, stmtPublicHonks, stmtUserHonks, stm
 var stmtHonksByOntology, stmtHonksForUser, stmtHonksForMe, stmtSaveDub, stmtHonksByXonker *sql.Stmt
 var stmtHonksFromLongAgo *sql.Stmt
 var stmtHonksByHonker, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
-var stmtEventHonks, stmtOneBonk, stmtFindZonk, stmtFindXonk, stmtSaveDonk *sql.Stmt
+var stmtEventHonks, stmtOneShare, stmtFindZonk, stmtFindXonk, stmtSaveDonk *sql.Stmt
 var stmtFindFile, stmtGetFileData, stmtSaveFileData, stmtSaveFile *sql.Stmt
 var stmtCheckFileData *sql.Stmt
 var stmtAddDoover, stmtGetDoovers, stmtLoadDoover, stmtZapDoover, stmtOneHonker *sql.Stmt
@@ -1145,7 +1145,7 @@ func prepareStatements(db *sql.DB) {
 	butnotthose := " and convoy not in (select name from zonkers where userid = ? and wherefore = 'zonvoy' order by zonkerid desc limit 100)"
 	stmtOneActivityPubActivity = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ?")
 	stmtAnyXonk = sqlMustPrepare(db, selecthonks+"where xid = ? order by honks.honkid asc")
-	stmtOneBonk = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ? and what = 'bonk' and whofore = 2")
+	stmtOneShare = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ? and what = 'share' and whofore = 2")
 	stmtPublicHonks = sqlMustPrepare(db, selecthonks+"where whofore = 2 and dt > ?"+smalllimit)
 	stmtEventHonks = sqlMustPrepare(db, selecthonks+"where (whofore = 2 or honks.userid = ?) and what = 'event'"+smalllimit)
 	stmtUserHonks = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and (whofore = 2 or whofore = ?) and username = ? and dt > ?"+smalllimit)

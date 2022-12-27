@@ -153,7 +153,7 @@ type OldRevision struct {
 
 const (
 	flagIsAcked    = 1
-	flagIsBonked   = 2
+	flagIsShared   = 2
 	flagIsSaved    = 4
 	flagIsUntagged = 8
 	flagIsReacted  = 16
@@ -164,8 +164,8 @@ func (honk *ActivityPubActivity) IsAcked() bool {
 	return honk.Flags&flagIsAcked != 0
 }
 
-func (honk *ActivityPubActivity) IsBonked() bool {
-	return honk.Flags&flagIsBonked != 0
+func (honk *ActivityPubActivity) IsShared() bool {
+	return honk.Flags&flagIsShared != 0
 }
 
 func (honk *ActivityPubActivity) IsSaved() bool {

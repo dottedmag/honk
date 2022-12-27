@@ -1225,8 +1225,8 @@ func saveuser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/account", http.StatusSeeOther)
 }
 
-func bonkit(xid string, user *UserProfile) {
-	dlog.Printf("bonking %s", xid)
+func doShare(xid string, user *UserProfile) {
+	dlog.Printf("sharing %s", xid)
 
 	xonk := getActivityPubActivity(user.ID, xid)
 	if xonk == nil {
@@ -1235,14 +1235,14 @@ func bonkit(xid string, user *UserProfile) {
 	if !xonk.Public {
 		return
 	}
-	if xonk.IsBonked() {
+	if xonk.IsShared() {
 		return
 	}
 	donksforhonks([]*ActivityPubActivity{xonk})
 
-	_, err := stmtUpdateFlags.Exec(flagIsBonked, xonk.ID)
+	_, err := stmtUpdateFlags.Exec(flagIsShared, xonk.ID)
 	if err != nil {
-		elog.Printf("error acking bonk: %s", err)
+		elog.Printf("error acking share: %s", err)
 	}
 
 	oonker := xonk.Oonker
@@ -1250,10 +1250,10 @@ func bonkit(xid string, user *UserProfile) {
 		oonker = xonk.Honker
 	}
 	dt := time.Now().UTC()
-	bonk := &ActivityPubActivity{
+	share := &ActivityPubActivity{
 		UserID:   user.ID,
 		Username: user.Name,
-		What:     "bonk",
+		What:     "share",
 		Honker:   user.URL,
 		Oonker:   oonker,
 		XID:      xonk.XID,
@@ -1273,25 +1273,25 @@ func bonkit(xid string, user *UserProfile) {
 		Time:     xonk.Time,
 	}
 
-	err = savehonk(bonk)
+	err = savehonk(share)
 	if err != nil {
 		elog.Printf("uh oh")
 		return
 	}
 
-	go honkworldwide(user, bonk)
+	go honkworldwide(user, share)
 }
 
-func submitbonk(w http.ResponseWriter, r *http.Request) {
+func submitShare(w http.ResponseWriter, r *http.Request) {
 	xid := r.FormValue("xid")
 	userinfo := login.GetUserInfo(r)
 	user, _ := getUserBio(userinfo.Username)
 
-	bonkit(xid, user)
+	doShare(xid, user)
 
 	if r.FormValue("js") != "1" {
 		templinfo := getInfo(r)
-		templinfo["ServerMessage"] = "Bonked!"
+		templinfo["ServerMessage"] = "Shared!"
 		err := readviews.Execute(w, "msg.html", templinfo)
 		if err != nil {
 			elog.Print(err)
@@ -1402,22 +1402,22 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "bonk" {
+	if wherefore == "share" {
 		user, _ := getUserBio(userinfo.Username)
-		bonkit(what, user)
+		doShare(what, user)
 		return
 	}
 
-	if wherefore == "unbonk" {
-		xonk := getbonk(userinfo.UserID, what)
+	if wherefore == "unshare" {
+		xonk := getShare(userinfo.UserID, what)
 		if xonk != nil {
 			deleteHonk(xonk.ID)
 			xonk = getActivityPubActivity(userinfo.UserID, what)
-			_, err := stmtClearFlags.Exec(flagIsBonked, xonk.ID)
+			_, err := stmtClearFlags.Exec(flagIsShared, xonk.ID)
 			if err != nil {
-				elog.Printf("error unbonking: %s", err)
+				elog.Printf("error unsharing: %s", err)
 			}
-			sendzonkofsorts(xonk, user, "unbonk", "")
+			sendzonkofsorts(xonk, user, "unshare", "")
 		}
 		return
 	}
@@ -1520,7 +1520,7 @@ func newhonkpage(w http.ResponseWriter, r *http.Request) {
 }
 
 func canedithonk(user *UserProfile, honk *ActivityPubActivity) bool {
-	if honk == nil || honk.Honker != user.URL || honk.What == "bonk" {
+	if honk == nil || honk.Honker != user.URL || honk.What == "share" {
 		return false
 	}
 	return true
@@ -2661,7 +2661,7 @@ func serve() {
 	LoggedInRouter.HandleFunc("/newhonk", newhonkpage)
 	LoggedInRouter.HandleFunc("/edit", edithonkpage)
 	LoggedInRouter.Handle("/honk", login.CSRFWrap("honkhonk", http.HandlerFunc(submitwebhonk)))
-	LoggedInRouter.Handle("/bonk", login.CSRFWrap("honkhonk", http.HandlerFunc(submitbonk)))
+	LoggedInRouter.Handle("/share", login.CSRFWrap("honkhonk", http.HandlerFunc(submitShare)))
 	LoggedInRouter.Handle("/zonkit", login.CSRFWrap("honkhonk", http.HandlerFunc(zonkit)))
 	LoggedInRouter.Handle("/savehfcs", login.CSRFWrap("filter", http.HandlerFunc(savehfcs)))
 	LoggedInRouter.Handle("/saveuser", login.CSRFWrap("saveuser", http.HandlerFunc(saveuser)))

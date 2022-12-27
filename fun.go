@@ -53,7 +53,7 @@ func init() {
 var relingo = make(map[string]string)
 
 func loadLingo() {
-	for _, l := range []string{"honked", "bonked", "honked back", "qonked", "evented"} {
+	for _, l := range []string{"honked", "shared", "honked back", "qonked", "evented"} {
 		v := l
 		k := "lingo-" + strings.ReplaceAll(l, " ", "")
 		getConfigValue(k, &v)
@@ -81,7 +81,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 		if h.Whofore == 2 || h.Whofore == 3 {
 			local = true
 		}
-		if local && h.What != "bonked" {
+		if local && h.What != "shared" {
 			h.Noise = re_memes.ReplaceAllString(h.Noise, "")
 		}
 		h.Username, h.Handle = handles(h.Honker)
@@ -144,7 +144,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 						}
 					}
 				}
-				if local && h.What != "bonked" {
+				if local && h.What != "shared" {
 					var emu Emu
 					emucache.Get(e, &emu)
 					if emu.ID != "" {

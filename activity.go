@@ -319,7 +319,7 @@ func needActivityPubActivity(user *UserProfile, x *ActivityPubActivity) bool {
 	}
 	return needActivityPubActivityID(user, x.XID)
 }
-func needbonkid(user *UserProfile, xid string) bool {
+func needShareID(user *UserProfile, xid string) bool {
 	return needxonkidX(user, xid, true)
 }
 func needActivityPubActivityID(user *UserProfile, xid string) bool {
@@ -595,16 +595,16 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			} else {
 				xid, _ = item.GetString("object")
 			}
-			if !needbonkid(user, xid) {
+			if !needShareID(user, xid) {
 				return nil
 			}
-			dlog.Printf("getting bonk: %s", xid)
+			dlog.Printf("getting share: %s", xid)
 			obj, err = GetJunkHardMode(user.ID, xid)
 			if err != nil {
-				ilog.Printf("error getting bonk: %s: %s", xid, err)
+				ilog.Printf("error getting share: %s: %s", xid, err)
 			}
 			origin = originate(xid)
-			what = "bonk"
+			what = "share"
 		case "Update":
 			isUpdate = true
 			fallthrough
@@ -1277,15 +1277,15 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		jo["summary"] = html.EscapeString(h.Precis)
 		jo["content"] = h.Noise
 		j["object"] = jo
-	case "bonk":
+	case "share":
 		j["type"] = "Announce"
 		if h.Convoy != "" {
 			j["context"] = h.Convoy
 		}
 		j["object"] = h.XID
-	case "unbonk":
+	case "unshare":
 		b := junk.New()
-		b["id"] = user.URL + "/" + "bonk" + "/" + shortxid(h.XID)
+		b["id"] = user.URL + "/" + "share" + "/" + shortxid(h.XID)
 		b["type"] = "Announce"
 		b["actor"] = user.URL
 		if h.Convoy != "" {

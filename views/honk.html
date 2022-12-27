@@ -1,28 +1,28 @@
 <article class="honk {{ .Honk.Style }}" data-convoy="{{ .Honk.Convoy }}">
-{{ $bonkcsrf := .BonkCSRF }}
+{{ $sharecsrf := .ShareCSRF }}
 {{ $IsPreview := .IsPreview }}
 {{ $maplink := .MapLink }}
 {{ $omitimages := .OmitImages }}
 {{ with .Honk }}
 <header>
-{{ if $bonkcsrf }}
+{{ if $sharecsrf }}
 <a class="honkerlink" href="/h?xid={{ .Honker }}" data-xid="{{ .Honker }}">
 {{ else }}
 <a href="{{ .Honker }}" rel=noreferrer>
 {{ end }}
 <img alt="" src="/a?a={{ .Honker}}">
-{{ if $bonkcsrf }} </a> {{ end }}
+{{ if $sharecsrf }} </a> {{ end }}
 {{ if .Oonker }}
-{{ if $bonkcsrf }}
+{{ if $sharecsrf }}
 <a class="honkerlink" href="/h?xid={{ .Oonker }}" data-xid="{{ .Oonker }}">
 {{ else }}
 <a href="{{ .Oonker }}" rel=noreferrer>
 {{ end }}
 <img alt="" src="/a?a={{ .Oonker}}">
-{{ if $bonkcsrf }} </a> {{ end }}
+{{ if $sharecsrf }} </a> {{ end }}
 {{ end }}
 <p>
-{{ if $bonkcsrf }}
+{{ if $sharecsrf }}
 <a class="honkerlink" href="/h?xid={{ .Honker }}" data-xid="{{ .Honker }}">{{ .Username }}</a>
 {{ else }}
 <a href="{{ .Honker }}" rel=noreferrer>{{ .Username }}</a>
@@ -31,7 +31,7 @@
 {{ if .Oonker }}
 <br>
 <span style="margin-left: 1em;" class="clip">
-{{ if $bonkcsrf }}
+{{ if $sharecsrf }}
 original: <a class="honkerlink" href="/h?xid={{ .Oonker }}" data-xid="{{ .Oonker }}">{{ .Oondle }}</a>
 {{ else }}
 original: <a href="{{ .Oonker }}" rel=noreferrer>{{ .Oondle }}</a>
@@ -46,7 +46,7 @@ in reply to: <a href="{{ .RID }}" rel=noreferrer>{{ .RID }}</a>
 {{ end }}
 {{ end }}
 <br>
-{{ if $bonkcsrf }}
+{{ if $sharecsrf }}
 <span style="margin-left: 1em;" class="clip">convoy: <a class="convoylink" href="/t?c={{ .Convoy }}">{{ .Convoy }}</a></span>
 {{ end }}
 </header>
@@ -91,24 +91,24 @@ in reply to: <a href="{{ .RID }}" rel=noreferrer>{{ .RID }}</a>
 {{ end }}
 {{ if eq .Honk.What "wonked" }}
 <p>
-{{ if and $bonkcsrf .Honk.IsWonked }}
+{{ if and $sharecsrf .Honk.IsWonked }}
 {{ .Honk.Guesses }}
 <p>{{ .Honk.Noise }}
 {{ else }}
 <button onclick="return playit(this, '{{ .Honk.Noise }}', '{{ .Honk.Wonkles }}', '{{ .Honk.XID }}')">it's play time!</button>
 {{ end }}
 {{ end }}
-{{ if and $bonkcsrf (not $IsPreview) }}
+{{ if and $sharecsrf (not $IsPreview) }}
 <p>
 <details class="actions">
 <summary>Actions</summary>
 <div>
 <p>
 {{ if .Honk.Public }}
-{{ if .Honk.IsBonked }}
-<button onclick="return unbonk(this, '{{ .Honk.XID }}');">unbonk</button>
+{{ if .Honk.IsShared }}
+<button onclick="return unshare(this, '{{ .Honk.XID }}');">unshare</button>
 {{ else }}
-<button onclick="return bonk(this, '{{ .Honk.XID }}');">bonk</button>
+<button onclick="return share(this, '{{ .Honk.XID }}');">share</button>
 {{ end }}
 {{ else }}
 <button disabled>nope</button>
