@@ -491,8 +491,6 @@ func donksforhonks(honks []*ActivityPubActivity) {
 				elog.Printf("error parsing badonks: %s", err)
 				continue
 			}
-		case "wonkles":
-			h.Wonkles = j
 		case "guesses":
 			h.Guesses = template.HTML(j)
 		case "oldrev":
@@ -901,13 +899,6 @@ func saveextras(tx *sql.Tx, h *ActivityPubActivity) error {
 		}
 		if err != nil {
 			elog.Printf("error saving mentions: %s", err)
-			return err
-		}
-	}
-	if w := h.Wonkles; w != "" {
-		_, err := tx.Stmt(stmtSaveMeta).Exec(h.ID, "wonkles", w)
-		if err != nil {
-			elog.Printf("error saving wonkles: %s", err)
 			return err
 		}
 	}

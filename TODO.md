@@ -20,7 +20,6 @@
   * ont
   * osmosis
   * reverbolate
-  * wonk
   * xonk
   * zaggie
   * zonk

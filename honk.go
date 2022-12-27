@@ -104,7 +104,6 @@ type ActivityPubActivity struct {
 	Time     *Time
 	Mentions []Mention
 	Badonks  []Badonk
-	Wonkles  string
 	Guesses  template.HTML
 }
 
@@ -157,7 +156,6 @@ const (
 	flagIsSaved    = 4
 	flagIsUntagged = 8
 	flagIsReacted  = 16
-	flagIsWonked   = 32
 )
 
 func (honk *ActivityPubActivity) IsAcked() bool {
@@ -178,10 +176,6 @@ func (honk *ActivityPubActivity) IsUntagged() bool {
 
 func (honk *ActivityPubActivity) IsReacted() bool {
 	return honk.Flags&flagIsReacted != 0
-}
-
-func (honk *ActivityPubActivity) IsWonked() bool {
-	return honk.Flags&flagIsWonked != 0
 }
 
 type Donk struct {

@@ -180,9 +180,6 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 
 		h.HTPrecis = template.HTML(h.Precis)
 		h.HTML = template.HTML(h.Noise)
-		if h.What == "wonked" {
-			h.HTML = "? wonk ?"
-		}
 		if redo := relingo[h.What]; redo != "" {
 			h.What = redo
 		}

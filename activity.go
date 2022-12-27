@@ -661,8 +661,6 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		case "Move":
 			obj = item
 			what = "move"
-		case "GuessWord": // dealt with below
-			fallthrough
 		case "Audio":
 			fallthrough
 		case "Image":
@@ -786,12 +784,6 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			if ot == "Move" {
 				targ, _ := obj.GetString("target")
 				content += string(templates.Sprintf(`<p>Moved to <a href="%s">%s</a>`, targ, targ))
-			}
-			if ot == "GuessWord" {
-				what = "wonk"
-				content, _ = obj.GetString("content")
-				xonk.Wonkles, _ = obj.GetString("wordlist")
-				go saveWordList(xonk.Wonkles)
 			}
 			if what == "honk" && rid != "" {
 				what = "tonk"
@@ -1150,8 +1142,6 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		fallthrough
 	case "event":
 		fallthrough
-	case "wonk":
-		fallthrough
 	case "honk":
 		j["type"] = "Create"
 		jo = junk.New()
@@ -1159,8 +1149,6 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		jo["type"] = "Note"
 		if h.What == "event" {
 			jo["type"] = "Event"
-		} else if h.What == "wonk" {
-			jo["type"] = "GuessWord"
 		}
 		if h.What == "update" {
 			j["type"] = "Update"
@@ -1266,9 +1254,6 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 			if t.Duration != 0 {
 				jo["duration"] = "PT" + strings.ToUpper(t.Duration.String())
 			}
-		}
-		if w := h.Wonkles; w != "" {
-			jo["wordlist"] = w
 		}
 		atts := activatedonks(h.Donks)
 		if len(atts) > 0 {

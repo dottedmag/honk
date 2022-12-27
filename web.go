@@ -1360,21 +1360,6 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "wonk" {
-		xonk := getActivityPubActivity(userinfo.UserID, what)
-		if xonk != nil {
-			_, err := stmtUpdateFlags.Exec(flagIsWonked, xonk.ID)
-			if err == nil {
-				guesses := r.FormValue("guesses")
-				_, err = stmtSaveMeta.Exec(xonk.ID, "guesses", guesses)
-			}
-			if err != nil {
-				elog.Printf("error saving: %s", err)
-			}
-		}
-		return
-	}
-
 	// my hammer is too big, oh well
 	defer oldjonks.Flush()
 
@@ -1662,10 +1647,6 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		if rid != "" {
 			what = "tonk"
 		}
-		wonkles := r.FormValue("wonkles")
-		if wonkles != "" {
-			what = "wonk"
-		}
 		honk = &ActivityPubActivity{
 			UserID:   userinfo.UserID,
 			Username: userinfo.Username,
@@ -1674,7 +1655,6 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 			XID:      xid,
 			Date:     dt,
 			Format:   format,
-			Wonkles:  wonkles,
 		}
 	}
 
@@ -2632,7 +2612,6 @@ func serve() {
 
 	GetSubrouter.HandleFunc("/style.css", serveviewasset)
 	GetSubrouter.HandleFunc("/honkpage.js", serveviewasset)
-	GetSubrouter.HandleFunc("/wonk.js", serveviewasset)
 	GetSubrouter.HandleFunc("/local.css", servedataasset)
 	GetSubrouter.HandleFunc("/local.js", servedataasset)
 	GetSubrouter.HandleFunc("/icon.png", servedataasset)
@@ -2643,8 +2622,6 @@ func serve() {
 	PostSubRouter.HandleFunc("/dologin", login.LoginFunc)
 	GetSubrouter.HandleFunc("/logout", login.LogoutFunc)
 	GetSubrouter.HandleFunc("/help/{name:[\\pL[:digit:]_.-]+}", servehelp)
-
-	GetSubrouter.HandleFunc("/bloat/wonkles", serveWordList)
 
 	LoggedInRouter := mux.NewRoute().Subrouter()
 	LoggedInRouter.Use(login.Required)
