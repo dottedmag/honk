@@ -1837,7 +1837,6 @@ func followme(user *UserProfile, who string, name string, j junk.Junk) {
 		}
 	} else {
 		stmtSaveDub.Exec(user.ID, name, who, "dub", folxid)
-		calculateFollowersForMetrics()
 	}
 	go rubadubdub(user, j)
 }

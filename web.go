@@ -38,8 +38,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"humungus.tedunangst.com/r/webs/cache"
 	"humungus.tedunangst.com/r/webs/httpsig"
 	"humungus.tedunangst.com/r/webs/junk"
@@ -326,16 +324,11 @@ func inbox(w http.ResponseWriter, r *http.Request) {
 	what, _ := j.GetString("type")
 
 	obj, _ := j.GetString("object")
-	metricFediEvent.WithLabelValues(what).Inc()
 	if what == "EmojiReact" && originate(obj) != serverName {
 		return
 	}
 
 	who, _ := j.GetString("actor")
-	whourl, err := url.Parse(who)
-	if err == nil {
-		metricFediEventActor.WithLabelValues(whourl.Hostname()).Inc()
-	}
 	if rejectactor(user.ID, who) {
 		return
 	}
@@ -430,58 +423,6 @@ func inbox(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		go xonksaver(user, j, origin)
-	}
-}
-
-var (
-	metricFediEvent = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "honk_fedi_event",
-			Help: "How many times an event has happened.",
-		},
-		[]string{"type"},
-	)
-	metricFediEventActor = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "honk_fedi_event_actor_domain",
-			Help: "How many times an actor has triggered an event.",
-		},
-		[]string{"actor"},
-	)
-	metricFileServed = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "honk_file_served",
-			Help: "",
-		},
-		[]string{},
-	)
-	metricHonkers = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "honk_honkers",
-			Help: "",
-		},
-		[]string{"account"},
-	)
-)
-
-func init() {
-	prometheus.MustRegister(metricFediEvent)
-	prometheus.MustRegister(metricFediEventActor)
-	prometheus.MustRegister(metricFileServed)
-	prometheus.MustRegister(metricHonkers)
-}
-
-func calculateFollowersForMetrics() {
-	rows, err := stmtGetTopDubbed.Query()
-	if err == nil {
-		metricHonkers.Reset()
-		for rows.Next() {
-			var userid, count int
-			rows.Scan(&count, &userid)
-			metricHonkers.WithLabelValues(fmt.Sprint(userid)).Set(float64(count))
-		}
-	} else {
-		log.Printf("cannot quantify fame: %v", err)
 	}
 }
 
@@ -2259,7 +2200,6 @@ func servefile(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	metricFileServed.WithLabelValues().Inc()
 	w.Header().Set("Content-Type", media)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "max-age="+somedays())
@@ -2602,8 +2542,6 @@ func serve() {
 	GetSubrouter.HandleFunc("/emu/{emu:[^.]*[^/]+}", serveemu)
 	GetSubrouter.HandleFunc("/meme/{meme:[^.]*[^/]+}", servememe)
 	GetSubrouter.HandleFunc("/.well-known/webfinger", webfinger)
-	GetSubrouter.Handle("/metrics-honk", promhttp.Handler())
-	calculateFollowersForMetrics()
 	GetSubrouter.HandleFunc("/flag/{code:.+}", showflag)
 
 	GetSubrouter.HandleFunc("/server", serveractor)
