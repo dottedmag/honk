@@ -615,11 +615,11 @@ func ximport(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	convoy := ""
+	thread := ""
 	if xonk != nil {
-		convoy = xonk.Convoy
+		thread = xonk.Thread
 	}
-	http.Redirect(w, r, "/t?c="+url.QueryEscape(convoy), http.StatusSeeOther)
+	http.Redirect(w, r, "/t?c="+url.QueryEscape(thread), http.StatusSeeOther)
 }
 
 func xzone(w http.ResponseWriter, r *http.Request) {
@@ -805,19 +805,19 @@ func showcombo(w http.ResponseWriter, r *http.Request) {
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
 	honkpage(w, u, honks, templinfo)
 }
-func showconvoy(w http.ResponseWriter, r *http.Request) {
+func showThread(w http.ResponseWriter, r *http.Request) {
 	c := r.FormValue("c")
 	u := login.GetUserInfo(r)
-	honks := gethonksbyconvoy(u.UserID, c, 0)
+	honks := gethonksbyThread(u.UserID, c, 0)
 	templinfo := getInfo(r)
 	if len(honks) > 0 {
 		templinfo["TopHID"] = honks[0].ID
 	}
 	honks = osmosis(honks, u.UserID, false)
 	reversehonks(honks)
-	templinfo["PageName"] = "convoy"
+	templinfo["PageName"] = "thread"
 	templinfo["PageArg"] = c
-	templinfo["ServerMessage"] = "honks in convoy: " + c
+	templinfo["ServerMessage"] = "honks in thread: " + c
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
 	honkpage(w, u, honks, templinfo)
 }
@@ -1095,7 +1095,7 @@ func showonehonk(w http.ResponseWriter, r *http.Request) {
 		honkpage(w, u, honks, templinfo)
 		return
 	}
-	rawhonks := gethonksbyconvoy(honk.UserID, honk.Convoy, 0)
+	rawhonks := gethonksbyThread(honk.UserID, honk.Thread, 0)
 	reversehonks(rawhonks)
 	var honks []*ActivityPubActivity
 	for _, h := range rawhonks {
@@ -1264,7 +1264,7 @@ func doShare(xid string, user *UserProfile) {
 		Date:     dt,
 		Donks:    xonk.Donks,
 		Whofore:  2,
-		Convoy:   xonk.Convoy,
+		Thread:   xonk.Thread,
 		Audience: []string{activitystreamsPublicString, oonker},
 		Public:   true,
 		Format:   xonk.Format,
@@ -1684,7 +1684,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	honk.Noise = noise
 	translate(honk)
 
-	var convoy string
+	var thread string
 	if rid != "" {
 		xonk := getActivityPubActivity(userinfo.UserID, rid)
 		if xonk == nil {
@@ -1694,7 +1694,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		if xonk.Public {
 			honk.Audience = append(honk.Audience, xonk.Audience...)
 		}
-		convoy = xonk.Convoy
+		thread = xonk.Thread
 		for i, a := range honk.Audience {
 			if a == activitystreamsPublicString {
 				honk.Audience[0], honk.Audience[i] = honk.Audience[i], honk.Audience[0]
@@ -1717,8 +1717,8 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		honk.Audience = append(honk.Audience, grapevine(honk.Mentions)...)
 	}
 
-	if convoy == "" {
-		convoy = "data:,electrichonkytonk-" + make18CharRandomString()
+	if thread == "" {
+		thread = "data:,electrichonkytonk-" + make18CharRandomString()
 	}
 	butnottooloud(honk.Audience)
 	honk.Audience = stringArrayTrimUntilDupe(honk.Audience)
@@ -1728,7 +1728,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		return nil
 	}
 	honk.Public = loudandproud(honk.Audience)
-	honk.Convoy = convoy
+	honk.Thread = thread
 
 	donkxid := r.FormValue("donkxid")
 	if donkxid == "" {
@@ -2348,11 +2348,11 @@ func webhydra(w http.ResponseWriter, r *http.Request) {
 		honks = gethonksbycombo(userid, c, wanted)
 		honks = osmosis(honks, userid, false)
 		hydra.Srvmsg = templates.Sprintf("honks by combo: %s", c)
-	case "convoy":
+	case "thread":
 		c := r.FormValue("c")
-		honks = gethonksbyconvoy(userid, c, wanted)
+		honks = gethonksbyThread(userid, c, wanted)
 		honks = osmosis(honks, userid, false)
-		hydra.Srvmsg = templates.Sprintf("honks in convoy: %s", c)
+		hydra.Srvmsg = templates.Sprintf("honks in thread: %s", c)
 	case "honker":
 		xid := r.FormValue("xid")
 		honks = gethonksbyxonker(userid, xid, wanted)
@@ -2671,7 +2671,7 @@ func serve() {
 	LoggedInRouter.HandleFunc("/h", showhonker)
 	LoggedInRouter.HandleFunc("/c/{name:[\\pL[:digit:]_.-]+}", showcombo)
 	LoggedInRouter.HandleFunc("/c", showcombos)
-	LoggedInRouter.HandleFunc("/t", showconvoy)
+	LoggedInRouter.HandleFunc("/t", showThread)
 	LoggedInRouter.HandleFunc("/q", showsearch)
 	LoggedInRouter.HandleFunc("/hydra", webhydra)
 	LoggedInRouter.Handle("/submithonker", login.CSRFWrap("submithonker", http.HandlerFunc(submithonker)))

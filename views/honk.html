@@ -1,4 +1,4 @@
-<article class="honk {{ .Honk.Style }}" data-convoy="{{ .Honk.Convoy }}">
+<article class="honk {{ .Honk.Style }}" data-thread="{{ .Honk.Thread }}">
 {{ $sharecsrf := .ShareCSRF }}
 {{ $IsPreview := .IsPreview }}
 {{ $maplink := .MapLink }}
@@ -47,7 +47,7 @@ in reply to: <a href="{{ .RID }}" rel=noreferrer>{{ .RID }}</a>
 {{ end }}
 <br>
 {{ if $sharecsrf }}
-<span style="margin-left: 1em;" class="clip">convoy: <a class="convoylink" href="/t?c={{ .Convoy }}">{{ .Convoy }}</a></span>
+<span style="margin-left: 1em;" class="clip">thread: <a class="threadlink" href="/t?c={{ .Thread }}">{{ .Thread }}</a></span>
 {{ end }}
 </header>
 <p>
@@ -114,7 +114,7 @@ in reply to: <a href="{{ .RID }}" rel=noreferrer>{{ .RID }}</a>
 <button disabled>nope</button>
 {{ end }}
 <button onclick="return showhonkform(this, '{{ .Honk.XID }}', '{{ .Honk.Handles }}');"><a href="/newhonk?rid={{ .Honk.XID }}">honk back</a></button>
-<button onclick="return muteit(this, '{{ .Honk.Convoy }}');">mute</button>
+<button onclick="return muteit(this, '{{ .Honk.Thread }}');">mute</button>
 <button onclick="return showelement('evenmore{{ .Honk.ID }}')">even more</button>
 </div>
 <div id="evenmore{{ .Honk.ID }}" style="display:none">

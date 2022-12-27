@@ -88,7 +88,7 @@ type ActivityPubActivity struct {
 	Noise    string
 	Precis   string
 	Format   string
-	Convoy   string
+	Thread   string
 	Audience []string
 	Public   bool
 	Whofore  int64

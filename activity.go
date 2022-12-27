@@ -550,7 +550,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		}
 
 		var err error
-		var xid, rid, url, convoy string
+		var xid, rid, url, thread string
 		var replies []string
 		var obj junk.Junk
 		switch what {
@@ -754,9 +754,9 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 					rid, _ = robj.GetString("id")
 				}
 			}
-			convoy, _ = obj.GetString("context")
-			if convoy == "" {
-				convoy, _ = obj.GetString("conversation")
+			thread, _ = obj.GetString("context")
+			if thread == "" {
+				thread, _ = obj.GetString("conversation")
 			}
 			if ot == "Question" {
 				if what == "honk" {
@@ -968,7 +968,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		}
 
 		if currenttid == "" {
-			currenttid = convoy
+			currenttid = thread
 		}
 
 		// init xonk
@@ -977,7 +977,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		xonk.Date, _ = time.Parse(time.RFC3339, dt)
 		xonk.URL = url
 		xonk.Format = "html"
-		xonk.Convoy = convoy
+		xonk.Thread = thread
 		xonk.Mentions = mentions
 		for _, m := range mentions {
 			if m.Where == user.URL {
@@ -1019,21 +1019,21 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 					saveonemore(rid)
 					goingup--
 				}
-				if convoy == "" {
+				if thread == "" {
 					xx := getActivityPubActivity(user.ID, rid)
 					if xx != nil {
-						convoy = xx.Convoy
+						thread = xx.Thread
 					}
 				}
 			}
-			if convoy == "" {
-				convoy = currenttid
+			if thread == "" {
+				thread = currenttid
 			}
-			if convoy == "" {
-				convoy = "data:,missing-" + make18CharRandomString()
-				currenttid = convoy
+			if thread == "" {
+				thread = "data:,missing-" + make18CharRandomString()
+				currenttid = thread
 			}
-			xonk.Convoy = convoy
+			xonk.Thread = thread
 			saveActivityPubActivity(&xonk)
 		}
 		if goingup == 0 {
@@ -1172,9 +1172,9 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		if h.RID != "" {
 			jo["inReplyTo"] = h.RID
 		}
-		if h.Convoy != "" {
-			jo["context"] = h.Convoy
-			jo["conversation"] = h.Convoy
+		if h.Thread != "" {
+			jo["context"] = h.Thread
+			jo["conversation"] = h.Thread
 		}
 		jo["to"] = h.Audience[0]
 		if len(h.Audience) > 1 {
@@ -1279,8 +1279,8 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		j["object"] = jo
 	case "share":
 		j["type"] = "Announce"
-		if h.Convoy != "" {
-			j["context"] = h.Convoy
+		if h.Thread != "" {
+			j["context"] = h.Thread
 		}
 		j["object"] = h.XID
 	case "unshare":
@@ -1288,8 +1288,8 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		b["id"] = user.URL + "/" + "share" + "/" + shortxid(h.XID)
 		b["type"] = "Announce"
 		b["actor"] = user.URL
-		if h.Convoy != "" {
-			b["context"] = h.Convoy
+		if h.Thread != "" {
+			b["context"] = h.Thread
 		}
 		b["object"] = h.XID
 		j["type"] = "Undo"
@@ -1300,14 +1300,14 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 	case "ack":
 		j["type"] = "Read"
 		j["object"] = h.XID
-		if h.Convoy != "" {
-			j["context"] = h.Convoy
+		if h.Thread != "" {
+			j["context"] = h.Thread
 		}
 	case "react":
 		j["type"] = "EmojiReact"
 		j["object"] = h.XID
-		if h.Convoy != "" {
-			j["context"] = h.Convoy
+		if h.Thread != "" {
+			j["context"] = h.Thread
 		}
 		j["content"] = h.Noise
 	case "deack":
@@ -1316,8 +1316,8 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		b["type"] = "Read"
 		b["actor"] = user.URL
 		b["object"] = h.XID
-		if h.Convoy != "" {
-			b["context"] = h.Convoy
+		if h.Thread != "" {
+			b["context"] = h.Thread
 		}
 		j["type"] = "Undo"
 		j["object"] = b
@@ -1333,7 +1333,7 @@ var oldjonks = cache.New(cache.Options{Filler: func(xid string) ([]byte, bool) {
 		return nil, true
 	}
 	user, _ := getUserBio(honk.Username)
-	rawhonks := gethonksbyconvoy(honk.UserID, honk.Convoy, 0)
+	rawhonks := gethonksbyThread(honk.UserID, honk.Thread, 0)
 	reversehonks(rawhonks)
 	for _, h := range rawhonks {
 		if h.RID == honk.XID && h.Public && (h.Whofore == 2 || h.IsAcked()) {

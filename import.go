@@ -141,7 +141,7 @@ func importMastotoots(user *UserProfile, source string) {
 			URL:      xid,
 			Audience: append(toot.To, toot.Cc...),
 			Noise:    toot.Object.Content,
-			Convoy:   toot.Object.Conversation,
+			Thread:   toot.Object.Conversation,
 			Whofore:  2,
 			Format:   "html",
 			Precis:   toot.Object.Summary,
@@ -243,7 +243,7 @@ func importTwitter(username, source string) {
 		// 	}
 		// }
 		date   time.Time
-		convoy string
+		thread string
 		Tweet  struct {
 			CreatedAt        string   `json:"created_at"`
 			DisplayTextRange []string `json:"display_text_range"`
@@ -402,10 +402,10 @@ func importTwitter(username, source string) {
 		what := "honk"
 		noise := ""
 		if parent := tweetmap[t.Tweet.InReplyToStatusID]; parent != nil {
-			t.convoy = parent.convoy
+			t.thread = parent.thread
 			what = "tonk"
 		} else {
-			t.convoy = "data:,acoustichonkytonk-" + t.Tweet.IdStr
+			t.thread = "data:,acoustichonkytonk-" + t.Tweet.IdStr
 			if t.Tweet.InReplyToScreenName != "" {
 				noise = fmt.Sprintf("re: https://twitter.com/%s/status/%s\n\n",
 					t.Tweet.InReplyToScreenName, t.Tweet.InReplyToStatusID)
@@ -422,7 +422,7 @@ func importTwitter(username, source string) {
 			Date:     t.date,
 			Format:   "markdown",
 			Audience: audience,
-			Convoy:   t.convoy,
+			Thread:   t.thread,
 			Public:   true,
 			Whofore:  2,
 		}

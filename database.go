@@ -287,8 +287,8 @@ func gethonksbycombo(userid int64, combo string, wanted int64) []*ActivityPubAct
 	rows, err := stmtHonksByCombo.Query(wanted, userid, userid, combo, userid, wanted, userid, combo, userid)
 	return getsomehonks(rows, err)
 }
-func gethonksbyconvoy(userid int64, convoy string, wanted int64) []*ActivityPubActivity {
-	rows, err := stmtHonksByConvoy.Query(wanted, userid, userid, convoy)
+func gethonksbyThread(userid int64, thread string, wanted int64) []*ActivityPubActivity {
+	rows, err := stmtHonksByThread.Query(wanted, userid, userid, thread)
 	honks := getsomehonks(rows, err)
 	return honks
 }
@@ -336,9 +336,9 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 		params = append(params, t)
 	}
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, convoy, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	where := "where " + strings.Join(queries, " and ")
-	butnotthose := " and convoy not in (select name from zonkers where userid = ? and wherefore = 'zonvoy' order by zonkerid desc limit 100)"
+	butnotthose := " and thread not in (select name from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 100)"
 	limit := " order by honks.honkid desc limit 250"
 	params = append(params, userid)
 	rows, err := opendatabase().Query(selecthonks+where+butnotthose+limit, params...)
@@ -383,7 +383,7 @@ func scanhonk(row RowLike) *ActivityPubActivity {
 	h := new(ActivityPubActivity)
 	var dt, aud string
 	err := row.Scan(&h.ID, &h.UserID, &h.Username, &h.What, &h.Honker, &h.Oonker, &h.XID, &h.RID,
-		&dt, &h.URL, &aud, &h.Noise, &h.Precis, &h.Format, &h.Convoy, &h.Whofore, &h.Flags)
+		&dt, &h.URL, &aud, &h.Noise, &h.Precis, &h.Format, &h.Thread, &h.Whofore, &h.Flags)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			elog.Printf("error scanning honk: %s", err)
@@ -778,7 +778,7 @@ func savehonk(h *ActivityPubActivity) error {
 	}
 
 	res, err := tx.Stmt(stmtSaveHonk).Exec(h.UserID, h.What, h.Honker, h.XID, h.RID, dt, h.URL,
-		aud, h.Noise, h.Convoy, h.Whofore, h.Format, h.Precis,
+		aud, h.Noise, h.Thread, h.Whofore, h.Format, h.Precis,
 		h.Oonker, h.Flags)
 	if err == nil {
 		h.ID, _ = res.LastInsertId()
@@ -1047,7 +1047,7 @@ func cleanupdb(arg string) {
 		sqlargs = append(sqlargs, honker)
 	} else {
 		expdate := time.Now().Add(-time.Duration(days) * 24 * time.Hour).UTC().Format(dbtimeformat)
-		where = "dt < ? and convoy not in (select convoy from honks where flags & 4 or whofore = 2 or whofore = 3)"
+		where = "dt < ? and thread not in (select thread from honks where flags & 4 or whofore = 2 or whofore = 3)"
 		sqlargs = append(sqlargs, expdate)
 	}
 	sqlMustQuery(db, "delete from honks where flags & 4 = 0 and whofore = 0 and "+where, sqlargs...)
@@ -1057,7 +1057,7 @@ func cleanupdb(arg string) {
 
 	sqlMustQuery(db, "delete from filemeta where fileid not in (select fileid from donks)")
 	for _, u := range allusers() {
-		sqlMustQuery(db, "delete from zonkers where userid = ? and wherefore = 'zonvoy' and zonkerid < (select zonkerid from zonkers where userid = ? and wherefore = 'zonvoy' order by zonkerid desc limit 1 offset 200)", u.UserID, u.UserID)
+		sqlMustQuery(db, "delete from zonkers where userid = ? and wherefore = 'mute-thread' and zonkerid < (select zonkerid from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 1 offset 200)", u.UserID, u.UserID)
 	}
 
 	filexids := make(map[string]bool)
@@ -1103,7 +1103,7 @@ func cleanupdb(arg string) {
 
 var stmtHonkers, stmtDubbers, stmtNamedDubbers, stmtSaveHonker, stmtUpdateFlavor, stmtUpdateHonker *sql.Stmt
 var stmtDeleteHonker *sql.Stmt
-var stmtAnyXonk, stmtOneActivityPubActivity, stmtPublicHonks, stmtUserHonks, stmtHonksByCombo, stmtHonksByConvoy *sql.Stmt
+var stmtAnyXonk, stmtOneActivityPubActivity, stmtPublicHonks, stmtUserHonks, stmtHonksByCombo, stmtHonksByThread *sql.Stmt
 var stmtHonksByOntology, stmtHonksForUser, stmtHonksForMe, stmtSaveDub, stmtHonksByXonker *sql.Stmt
 var stmtHonksFromLongAgo *sql.Stmt
 var stmtHonksByHonker, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
@@ -1139,10 +1139,10 @@ func prepareStatements(db *sql.DB) {
 	stmtDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and flavor = 'dub'")
 	stmtNamedDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and name = ? and flavor = 'dub'")
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, convoy, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	limit := " order by honks.honkid desc limit 250"
 	smalllimit := " order by honks.honkid desc limit ?"
-	butnotthose := " and convoy not in (select name from zonkers where userid = ? and wherefore = 'zonvoy' order by zonkerid desc limit 100)"
+	butnotthose := " and thread not in (select name from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 100)"
 	stmtOneActivityPubActivity = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ?")
 	stmtAnyXonk = sqlMustPrepare(db, selecthonks+"where xid = ? order by honks.honkid asc")
 	stmtOneShare = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ? and what = 'share' and whofore = 2")
@@ -1158,14 +1158,14 @@ func prepareStatements(db *sql.DB) {
 	stmtHonksByHonker = sqlMustPrepare(db, selecthonks+"join honkers on (honkers.xid = honks.honker or honkers.xid = honks.oonker) where honks.honkid > ? and honks.userid = ? and honkers.name = ?"+butnotthose+limit)
 	stmtHonksByXonker = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and (honker = ? or oonker = ?)"+butnotthose+limit)
 	stmtHonksByCombo = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and honks.honker in (select xid from honkers where honkers.userid = ? and honkers.combos like ?) "+butnotthose+" union "+selecthonks+"join onts on honks.honkid = onts.honkid where honks.honkid > ? and honks.userid = ? and onts.ontology in (select xid from honkers where combos like ?)"+butnotthose+limit)
-	stmtHonksByConvoy = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and (honks.userid = ? or (? = -1 and whofore = 2)) and convoy = ?"+limit)
+	stmtHonksByThread = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and (honks.userid = ? or (? = -1 and whofore = 2)) and thread = ?"+limit)
 	stmtHonksByOntology = sqlMustPrepare(db, selecthonks+"join onts on honks.honkid = onts.honkid where honks.honkid > ? and onts.ontology = ? and (honks.userid = ? or (? = -1 and honks.whofore = 2))"+limit)
 
 	stmtSaveMeta = sqlMustPrepare(db, "insert into honkmeta (honkid, genus, json) values (?, ?, ?)")
 	stmtDeleteAllMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ?")
 	stmtDeleteSomeMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus not in ('oldrev')")
 	stmtDeleteOneMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus = ?")
-	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, rid, dt, url, audience, noise, convoy, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, rid, dt, url, audience, noise, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	stmtDeleteHonk = sqlMustPrepare(db, "delete from honks where honkid = ?")
 	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, noise = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
 	stmtSaveOnt = sqlMustPrepare(db, "insert into onts (ontology, honkid) values (?, ?)")

@@ -35,14 +35,14 @@ function unshare(el, xid) {
 	el.disabled = true
 	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "unshare", "what": xid}))
 }
-function muteit(el, convoy) {
+function muteit(el, thread) {
 	el.innerHTML = "muted"
 	el.disabled = true
-	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "zonvoy", "what": convoy}))
+	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "mute-thread", "what": thread}))
 	var els = document.querySelectorAll('article.honk')
 	for (var i = 0; i < els.length; i++) {
 		var e = els[i]
-		if (e.getAttribute("data-convoy") == convoy) {
+		if (e.getAttribute("data-thread") == thread) {
 			e.remove()
 		}
 	}
@@ -117,7 +117,7 @@ function fillinhonks(xhr, glowit) {
 	srvel.prepend(srvmsg)
 
 	var frontload = true
-	if (curpagestate.name == "convoy") {
+	if (curpagestate.name == "thread") {
 		frontload = false
 	}
 
@@ -142,7 +142,7 @@ function hydrargs() {
 	var name = curpagestate.name
 	var arg = curpagestate.arg
 	var args = { "page" : name }
-	if (name == "convoy") {
+	if (name == "thread") {
 		args["c"] = arg
 	} else if (name == "combo") {
 		args["c"] = arg
@@ -251,10 +251,10 @@ function pageswitcher(name, arg) {
 	}
 }
 function relinklinks() {
-	var els = document.getElementsByClassName("convoylink")
+	var els = document.getElementsByClassName("threadlink")
 	while (els.length) {
-		els[0].onclick = pageswitcher("convoy", els[0].text)
-		els[0].classList.remove("convoylink")
+		els[0].onclick = pageswitcher("thread", els[0].text)
+		els[0].classList.remove("threadlink")
 	}
 	els = document.getElementsByClassName("combolink")
 	while (els.length) {
