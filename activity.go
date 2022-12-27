@@ -313,19 +313,19 @@ func iszonked(userid int64, xid string) bool {
 	return false
 }
 
-func needActivityPubActivity(user *WhatAbout, x *ActivityPubActivity) bool {
+func needActivityPubActivity(user *UserProfile, x *ActivityPubActivity) bool {
 	if rejectxonk(x) {
 		return false
 	}
 	return needActivityPubActivityID(user, x.XID)
 }
-func needbonkid(user *WhatAbout, xid string) bool {
+func needbonkid(user *UserProfile, xid string) bool {
 	return needxonkidX(user, xid, true)
 }
-func needActivityPubActivityID(user *WhatAbout, xid string) bool {
+func needActivityPubActivityID(user *UserProfile, xid string) bool {
 	return needxonkidX(user, xid, false)
 }
-func needxonkidX(user *WhatAbout, xid string, isannounce bool) bool {
+func needxonkidX(user *UserProfile, xid string, isannounce bool) bool {
 	if !strings.HasPrefix(xid, "https://") {
 		return false
 	}
@@ -400,7 +400,7 @@ var boxofboxes = cache.New(cache.Options{Filler: func(ident string) (*Box, bool)
 	return nil, false
 }})
 
-func gimmexonks(user *WhatAbout, outbox string) {
+func gimmexonks(user *UserProfile, outbox string) {
 	dlog.Printf("getting outbox: %s", outbox)
 	j, err := GetJunk(user.ID, outbox)
 	if err != nil {
@@ -518,7 +518,7 @@ func firstofmany(obj junk.Junk, key string) string {
 	return ""
 }
 
-func xonksaver(user *WhatAbout, item junk.Junk, origin string) *ActivityPubActivity {
+func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubActivity {
 	depth := 0
 	maxdepth := 10
 	currenttid := ""
@@ -1061,7 +1061,7 @@ func dumpactivity(item junk.Junk) {
 	io.WriteString(fd, "\n")
 }
 
-func rubadubdub(user *WhatAbout, req junk.Junk) {
+func rubadubdub(user *UserProfile, req junk.Junk) {
 	actor, _ := req.GetString("actor")
 	j := tj.O{
 		"@context":  atContextString,
@@ -1076,7 +1076,7 @@ func rubadubdub(user *WhatAbout, req junk.Junk) {
 	deliverate(0, user.ID, actor, must.OK1(json.Marshal(j)), true)
 }
 
-func itakeitallback(user *WhatAbout, xid string, owner string, folxid string) {
+func itakeitallback(user *UserProfile, xid string, owner string, folxid string) {
 	j := tj.O{
 		"@context": atContextString,
 		"id":       user.URL + "/unsub/" + folxid,
@@ -1096,7 +1096,7 @@ func itakeitallback(user *WhatAbout, xid string, owner string, folxid string) {
 	deliverate(0, user.ID, owner, must.OK1(json.Marshal(j)), true)
 }
 
-func subsub(user *WhatAbout, xid string, owner string, folxid string) {
+func subsub(user *UserProfile, xid string, owner string, folxid string) {
 	if xid == "" {
 		ilog.Printf("can't subscribe to empty")
 		return
@@ -1131,7 +1131,7 @@ func activatedonks(donks []*Donk) []junk.Junk {
 }
 
 // returns activity, object
-func jonkjonk(user *WhatAbout, h *ActivityPubActivity) (junk.Junk, junk.Junk) {
+func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) {
 	dt := h.Date.Format(time.RFC3339)
 	var jo junk.Junk
 	j := junk.New()
@@ -1353,7 +1353,7 @@ func gimmejonk(xid string) ([]byte, bool) {
 	return j, ok
 }
 
-func boxuprcpts(user *WhatAbout, addresses []string, useshared bool) map[string]bool {
+func boxuprcpts(user *UserProfile, addresses []string, useshared bool) map[string]bool {
 	rcpts := make(map[string]bool)
 	for _, a := range addresses {
 		if a == "" || a == activitystreamsPublicString || a == user.URL || strings.HasSuffix(a, "/followers") {
@@ -1374,7 +1374,7 @@ func boxuprcpts(user *WhatAbout, addresses []string, useshared bool) map[string]
 	return rcpts
 }
 
-func chonkifymsg(user *WhatAbout, ch *Chonk) []byte {
+func chonkifymsg(user *UserProfile, ch *Chonk) []byte {
 	dt := ch.Date.Format(time.RFC3339)
 	aud := []string{ch.Target}
 
@@ -1418,7 +1418,7 @@ func chonkifymsg(user *WhatAbout, ch *Chonk) []byte {
 	return j.ToBytes()
 }
 
-func sendchonk(user *WhatAbout, ch *Chonk) {
+func sendchonk(user *UserProfile, ch *Chonk) {
 	msg := chonkifymsg(user, ch)
 
 	rcpts := make(map[string]bool)
@@ -1428,7 +1428,7 @@ func sendchonk(user *WhatAbout, ch *Chonk) {
 	}
 }
 
-func honkworldwide(user *WhatAbout, honk *ActivityPubActivity) {
+func honkworldwide(user *UserProfile, honk *ActivityPubActivity) {
 	jonk, _ := jonkjonk(user, honk)
 	jonk["@context"] = atContextString
 	msg := jonk.ToBytes()
@@ -1513,7 +1513,7 @@ func collectiveaction(honk *ActivityPubActivity) {
 	}
 }
 
-func junkuser(user *WhatAbout) junk.Junk {
+func junkuser(user *UserProfile) junk.Junk {
 	j := junk.New()
 	j["@context"] = atContextString
 	j["id"] = user.URL
@@ -1803,7 +1803,7 @@ func ingesthandle(origin string, obj junk.Junk) {
 }
 
 func updateMe(username string) {
-	var user *WhatAbout
+	var user *UserProfile
 	somenamedusers.Get(username, &user)
 	dt := time.Now().UTC().Format(time.RFC3339)
 	j := junk.New()
@@ -1835,7 +1835,7 @@ func updateMe(username string) {
 	}
 }
 
-func followme(user *WhatAbout, who string, name string, j junk.Junk) {
+func followme(user *UserProfile, who string, name string, j junk.Junk) {
 	folxid, _ := j.GetString("id")
 
 	log.Printf("updating honker follow: %s %s", who, folxid)
@@ -1857,7 +1857,7 @@ func followme(user *WhatAbout, who string, name string, j junk.Junk) {
 	go rubadubdub(user, j)
 }
 
-func unfollowme(user *WhatAbout, who string, name string, j junk.Junk) {
+func unfollowme(user *UserProfile, who string, name string, j junk.Junk) {
 	var folxid string
 	if who == "" {
 		folxid, _ = j.GetString("object")
@@ -1881,7 +1881,7 @@ func unfollowme(user *WhatAbout, who string, name string, j junk.Junk) {
 	}
 }
 
-func followyou(user *WhatAbout, honkerid int64) {
+func followyou(user *UserProfile, honkerid int64) {
 	var url, owner string
 	db := opendatabase()
 	row := db.QueryRow("select xid, owner from honkers where honkerid = ? and userid = ? and flavor in ('unsub', 'peep', 'presub', 'sub')",
@@ -1901,7 +1901,7 @@ func followyou(user *WhatAbout, honkerid int64) {
 	go subsub(user, url, owner, folxid)
 
 }
-func unfollowyou(user *WhatAbout, honkerid int64) {
+func unfollowyou(user *UserProfile, honkerid int64) {
 	db := opendatabase()
 	row := db.QueryRow("select xid, owner, folxid from honkers where honkerid = ? and userid = ? and flavor in ('sub')",
 		honkerid, user.ID)
@@ -1920,7 +1920,7 @@ func unfollowyou(user *WhatAbout, honkerid int64) {
 	go itakeitallback(user, url, owner, folxid)
 }
 
-func followyou2(user *WhatAbout, j junk.Junk) {
+func followyou2(user *UserProfile, j junk.Junk) {
 	who, _ := j.GetString("actor")
 
 	ilog.Printf("updating honker accept: %s", who)
@@ -1940,7 +1940,7 @@ func followyou2(user *WhatAbout, j junk.Junk) {
 	}
 }
 
-func nofollowyou2(user *WhatAbout, j junk.Junk) {
+func nofollowyou2(user *UserProfile, j junk.Junk) {
 	who, _ := j.GetString("actor")
 
 	ilog.Printf("updating honker reject: %s", who)

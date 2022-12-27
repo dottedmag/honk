@@ -84,7 +84,7 @@ func importMastodon(username, source string) {
 	}
 }
 
-func importMastotoots(user *WhatAbout, source string) {
+func importMastotoots(user *UserProfile, source string) {
 	type Toot struct {
 		Id     string
 		Type   string
@@ -186,7 +186,7 @@ func importMastotoots(user *WhatAbout, source string) {
 	}
 }
 
-func importMastotooters(user *WhatAbout, source string) {
+func importMastotooters(user *UserProfile, source string) {
 	ilog.Println("Importing honkers...")
 	fd, err := os.Open(source + "/following_accounts.csv")
 	if err != nil {

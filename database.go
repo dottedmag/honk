@@ -39,8 +39,8 @@ import (
 //go:embed schema.sql
 var sqlSchema string
 
-func userfromrow(row *sql.Row) (*WhatAbout, error) {
-	user := new(WhatAbout)
+func userfromrow(row *sql.Row) (*UserProfile, error) {
+	user := new(UserProfile)
 	var seckey, options string
 	err := row.Scan(&user.ID, &user.Name, &user.Display, &user.About, &user.Key, &seckey, &options)
 	if err == nil {
@@ -65,7 +65,7 @@ func userfromrow(row *sql.Row) (*WhatAbout, error) {
 	return user, nil
 }
 
-var somenamedusers = cache.New(cache.Options{Filler: func(name string) (*WhatAbout, bool) {
+var somenamedusers = cache.New(cache.Options{Filler: func(name string) (*UserProfile, bool) {
 	row := stmtUserByName.QueryRow(name)
 	user, err := userfromrow(row)
 	if err != nil {
@@ -79,7 +79,7 @@ var somenamedusers = cache.New(cache.Options{Filler: func(name string) (*WhatAbo
 	return user, true
 }})
 
-var somenumberedusers = cache.New(cache.Options{Filler: func(userid int64) (*WhatAbout, bool) {
+var somenumberedusers = cache.New(cache.Options{Filler: func(userid int64) (*UserProfile, bool) {
 	row := stmtUserByNumber.QueryRow(userid)
 	user, err := userfromrow(row)
 	if err != nil {
@@ -90,8 +90,8 @@ var somenumberedusers = cache.New(cache.Options{Filler: func(userid int64) (*Wha
 	return user, true
 }})
 
-func getserveruser() *WhatAbout {
-	var user *WhatAbout
+func getserveruser() *UserProfile {
+	var user *UserProfile
 	ok := somenumberedusers.Get(serverUID, &user)
 	if !ok {
 		elog.Panicf("lost server user")
@@ -99,8 +99,8 @@ func getserveruser() *WhatAbout {
 	return user
 }
 
-func getUserBio(name string) (*WhatAbout, error) {
-	var user *WhatAbout
+func getUserBio(name string) (*UserProfile, error) {
+	var user *UserProfile
 	ok := somenamedusers.Get(name, &user)
 	if !ok {
 		return nil, fmt.Errorf("no user: %s", name)
@@ -627,7 +627,7 @@ func savechonk(ch *Chonk) error {
 }
 
 func chatplusone(tx *sql.Tx, userid int64) {
-	var user *WhatAbout
+	var user *UserProfile
 	ok := somenumberedusers.Get(userid, &user)
 	if !ok {
 		return
@@ -646,7 +646,7 @@ func chatplusone(tx *sql.Tx, userid int64) {
 }
 
 func chatnewnone(userid int64) {
-	var user *WhatAbout
+	var user *UserProfile
 	ok := somenumberedusers.Get(userid, &user)
 	if !ok || user.Options.ChatCount == 0 {
 		return
@@ -666,7 +666,7 @@ func chatnewnone(userid int64) {
 }
 
 func meplusone(tx *sql.Tx, userid int64) {
-	var user *WhatAbout
+	var user *UserProfile
 	ok := somenumberedusers.Get(userid, &user)
 	if !ok {
 		return
@@ -685,7 +685,7 @@ func meplusone(tx *sql.Tx, userid int64) {
 }
 
 func menewnone(userid int64) {
-	var user *WhatAbout
+	var user *UserProfile
 	ok := somenumberedusers.Get(userid, &user)
 	if !ok || user.Options.MeCount == 0 {
 		return
@@ -926,7 +926,7 @@ func saveextras(tx *sql.Tx, h *ActivityPubActivity) error {
 
 var reactionLock sync.Mutex
 
-func addReaction(user *WhatAbout, xid string, who, react string) {
+func addReaction(user *UserProfile, xid string, who, react string) {
 	reactionLock.Lock()
 	defer reactionLock.Unlock()
 	h := getActivityPubActivity(user.ID, xid)
@@ -988,7 +988,7 @@ func savexonker(what, value, flav, when string) {
 	stmtSaveXonker.Exec(what, value, flav, when)
 }
 
-func savehonker(user *WhatAbout, url, name, flavor, combos, mj string) error {
+func savehonker(user *UserProfile, url, name, flavor, combos, mj string) error {
 	var owner string
 	if url[0] == '#' {
 		flavor = "peep"

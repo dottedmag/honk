@@ -62,7 +62,7 @@ func loadLingo() {
 }
 
 func reverbolate(userid int64, honks []*ActivityPubActivity) {
-	var user *WhatAbout
+	var user *UserProfile
 	somenumberedusers.Get(userid, &user)
 	for _, h := range honks {
 		h.What += "ed"
@@ -619,7 +619,7 @@ func stringArrayTrimUntilDupe(a []string) []string {
 }
 
 var ziggies = cache.New(cache.Options{Filler: func(userid int64) (*KeyInfo, bool) {
-	var user *WhatAbout
+	var user *UserProfile
 	ok := somenumberedusers.Get(userid, &user)
 	if !ok {
 		return nil, false

@@ -236,7 +236,7 @@ func crappola(j junk.Junk) bool {
 	return false
 }
 
-func ping(user *WhatAbout, who string) {
+func ping(user *UserProfile, who string) {
 	if targ := fullname(who, user.ID); targ != "" {
 		who = targ
 	}
@@ -272,7 +272,7 @@ func ping(user *WhatAbout, who string) {
 	ilog.Printf("sent ping to %s: %s", who, j["id"])
 }
 
-func pong(user *WhatAbout, who string, obj string) {
+func pong(user *UserProfile, who string, obj string) {
 	var box *Box
 	ok := boxofboxes.Get(who, &box)
 	if !ok {
@@ -763,7 +763,7 @@ func showuser(w http.ResponseWriter, r *http.Request) {
 	templinfo["PageName"] = "user"
 	templinfo["PageArg"] = name
 	templinfo["Name"] = user.Name
-	templinfo["WhatAbout"] = user.HTAbout
+	templinfo["UserBio"] = user.HTAbout
 	templinfo["ServerMessage"] = ""
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
 	honkpage(w, u, honks, templinfo)
@@ -1139,7 +1139,7 @@ func honkpage(w http.ResponseWriter, u *login.UserInfo, honks []*ActivityPubActi
 }
 
 func saveuser(w http.ResponseWriter, r *http.Request) {
-	userBio := r.FormValue("whatabout")
+	userBio := r.FormValue("userbio")
 	userBio = strings.Replace(userBio, "\r", "", -1)
 	u := login.GetUserInfo(r)
 	user, _ := getUserBio(u.Username)
@@ -1225,7 +1225,7 @@ func saveuser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/account", http.StatusSeeOther)
 }
 
-func bonkit(xid string, user *WhatAbout) {
+func bonkit(xid string, user *UserProfile) {
 	dlog.Printf("bonking %s", xid)
 
 	xonk := getActivityPubActivity(user.ID, xid)
@@ -1299,7 +1299,7 @@ func submitbonk(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func sendzonkofsorts(xonk *ActivityPubActivity, user *WhatAbout, what string, aux string) {
+func sendzonkofsorts(xonk *ActivityPubActivity, user *UserProfile, what string, aux string) {
 	zonk := &ActivityPubActivity{
 		What:     what,
 		XID:      xonk.XID,
@@ -1519,7 +1519,7 @@ func newhonkpage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func canedithonk(user *WhatAbout, honk *ActivityPubActivity) bool {
+func canedithonk(user *UserProfile, honk *ActivityPubActivity) bool {
 	if honk == nil || honk.Honker != user.URL || honk.What == "bonk" {
 		return false
 	}
@@ -2088,7 +2088,7 @@ func accountpage(w http.ResponseWriter, r *http.Request) {
 	if ban := user.Options.Banner; ban != "" {
 		about += "\n\nbanner: " + ban[strings.LastIndexByte(ban, '/')+1:]
 	}
-	templinfo["WhatAbout"] = about
+	templinfo["UserBio"] = about
 	err := readviews.Execute(w, "account.html", templinfo)
 	if err != nil {
 		elog.Print(err)

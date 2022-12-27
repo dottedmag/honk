@@ -37,7 +37,7 @@ func init() {
 	notrand.Seed(time.Now().Unix())
 }
 
-type WhatAbout struct {
+type UserProfile struct {
 	ID      int64
 	Name    string
 	Display string
