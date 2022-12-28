@@ -28,9 +28,9 @@ type Doover struct {
 	When time.Time
 }
 
-func calculateExpBackoff(goarounds int64, userid int64, rcpt string, msg []byte) {
+func calculateExpBackoff(retries int64, userid int64, rcpt string, msg []byte) {
 	var drift time.Duration
-	switch goarounds {
+	switch retries {
 	case 1:
 		drift = 5 * time.Minute
 	case 2:
@@ -48,7 +48,7 @@ func calculateExpBackoff(goarounds int64, userid int64, rcpt string, msg []byte)
 	}
 	drift += time.Duration(notrand.Int63n(int64(drift / 10)))
 	when := time.Now().Add(drift)
-	_, err := stmtAddDoover.Exec(when.UTC().Format(dbtimeformat), goarounds, userid, rcpt, msg)
+	_, err := stmtAddDoover.Exec(when.UTC().Format(dbtimeformat), retries, userid, rcpt, msg)
 	if err != nil {
 		elog.Printf("error saving doover: %s", err)
 	}
@@ -71,7 +71,7 @@ func clearoutbound(rcpt string) {
 
 var garage = gate.NewLimiter(40)
 
-func deliverate(goarounds int64, userid int64, rcpt string, msg []byte, prio bool) {
+func deliverate(retries int64, userid int64, rcpt string, msg []byte, prio bool) {
 	garage.Start()
 	defer garage.Finish()
 
@@ -90,7 +90,7 @@ func deliverate(goarounds int64, userid int64, rcpt string, msg []byte, prio boo
 		ok := boxofboxes.Get(rcpt, &box)
 		if !ok {
 			ilog.Printf("failed getting inbox for %s", rcpt)
-			calculateExpBackoff(goarounds+1, userid, rcpt, msg)
+			calculateExpBackoff(retries+1, userid, rcpt, msg)
 			return
 		}
 		inbox = box.In
@@ -99,7 +99,7 @@ func deliverate(goarounds int64, userid int64, rcpt string, msg []byte, prio boo
 	if err != nil {
 		ilog.Printf("failed to post json to %s: %s", inbox, err)
 		if prio {
-			calculateExpBackoff(goarounds+1, userid, rcpt, msg)
+			calculateExpBackoff(retries+1, userid, rcpt, msg)
 		}
 		return
 	}
@@ -148,11 +148,11 @@ func redeliveryLoop() {
 		nexttime := now.Add(24 * time.Hour)
 		for _, d := range doovers {
 			if d.When.Before(now) {
-				var goarounds, userid int64
+				var retries, userid int64
 				var rcpt string
 				var msg []byte
 				row := stmtLoadDoover.QueryRow(d.ID)
-				err := row.Scan(&goarounds, &userid, &rcpt, &msg)
+				err := row.Scan(&retries, &userid, &rcpt, &msg)
 				if err != nil {
 					elog.Printf("error scanning doover: %s", err)
 					continue
@@ -162,8 +162,8 @@ func redeliveryLoop() {
 					elog.Printf("error deleting doover: %s", err)
 					continue
 				}
-				ilog.Printf("redeliverating %s try %d", rcpt, goarounds)
-				deliverate(goarounds, userid, rcpt, msg, true)
+				ilog.Printf("redeliverating %s try %d", rcpt, retries)
+				deliverate(retries, userid, rcpt, msg, true)
 			} else if d.When.Before(nexttime) {
 				nexttime = d.When
 			}

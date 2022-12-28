@@ -22,6 +22,7 @@
   * reverbolate
   * xonk
   * zaggie
+  * ziggie
   * zonk
 * Redo image shrinker
 * Replace web/junk with tj
