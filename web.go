@@ -20,6 +20,7 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -38,6 +39,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+	"github.com/ridge/must/v2"
 	"github.com/ridge/tj"
 	"humungus.tedunangst.com/r/webs/cache"
 	"humungus.tedunangst.com/r/webs/httpsig"
@@ -647,15 +649,16 @@ var oldempties = cache.New(cache.Options{Filler: func(url string) ([]byte, bool)
 		colname = "/following"
 	}
 	user := fmt.Sprintf("https://%s%s", serverName, url[:len(url)-10])
-	j := junk.New()
-	j["@context"] = atContextString
-	j["id"] = user + colname
-	j["attributedTo"] = user
-	j["type"] = "OrderedCollection"
-	j["totalItems"] = 0
-	j["orderedItems"] = []junk.Junk{}
+	j := tj.O{
+		"@context":     atContextString,
+		"id":           user + colname,
+		"attributedTo": user,
+		"type":         "OrderedCollection",
+		"totalItems":   0,
+		"orderedItems": []tj.O{},
+	}
 
-	return j.ToBytes(), true
+	return must.OK1(json.Marshal(j)), true
 }})
 
 func emptiness(w http.ResponseWriter, r *http.Request) {
