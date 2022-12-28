@@ -132,7 +132,6 @@ function fillinhonks(xhr, glowit) {
 		} else {
 			holder.append(h)
 		}
-			
 	}
 	relinklinks()
 	return lenhonks
