@@ -43,19 +43,20 @@ import (
 
 var ldjsonContentType = `application/ld+json; profile="https://www.w3.org/ns/activitystreams"`
 var activityJsonContentType = `application/activity+json`
-var falsenames = []string{
-	`application/ld+json`,
-	`application/activity+json`,
-}
 var atContextString = "https://www.w3.org/ns/activitystreams"
 var activitystreamsPublicString = "https://www.w3.org/ns/activitystreams#Public"
 
 var fastTimeout time.Duration = 5
 var slowTimeout time.Duration = 30
 
-func friendorfoe(ct string) bool {
+var activityStreamsMediaTypes = []string{
+	`application/ld+json`,
+	`application/activity+json`,
+}
+
+func isActivityStreamsMediaType(ct string) bool {
 	ct = strings.ToLower(ct)
-	for _, at := range falsenames {
+	for _, at := range activityStreamsMediaTypes {
 		if strings.HasPrefix(ct, at) {
 			return true
 		}
@@ -1605,7 +1606,7 @@ var handfull = cache.New(cache.Options{Filler: func(name string) (string, bool) 
 		href, _ := l.GetString("href")
 		rel, _ := l.GetString("rel")
 		t, _ := l.GetString("type")
-		if rel == "self" && friendorfoe(t) {
+		if rel == "self" && isActivityStreamsMediaType(t) {
 			when := time.Now().UTC().Format(dbtimeformat)
 			_, err := stmtSaveXonker.Exec(name, href, "fishname", when)
 			if err != nil {

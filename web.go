@@ -695,7 +695,7 @@ func showuser(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	if friendorfoe(r.Header.Get("Accept")) {
+	if isActivityStreamsMediaType(r.Header.Get("Accept")) {
 		j, ok := asjonker(name)
 		if ok {
 			w.Header().Set("Content-Type", ldjsonContentType)
@@ -788,7 +788,7 @@ func showontology(w http.ResponseWriter, r *http.Request) {
 		userid = u.UserID
 	}
 	honks := gethonksbyontology(userid, "#"+name, 0)
-	if friendorfoe(r.Header.Get("Accept")) {
+	if isActivityStreamsMediaType(r.Header.Get("Accept")) {
 		if len(honks) > 40 {
 			honks = honks[0:40]
 		}
@@ -1010,7 +1010,7 @@ func showonehonk(w http.ResponseWriter, r *http.Request) {
 	}
 	xid := fmt.Sprintf("https://%s%s", serverName, r.URL.Path)
 
-	if friendorfoe(r.Header.Get("Accept")) {
+	if isActivityStreamsMediaType(r.Header.Get("Accept")) {
 		j, ok := gimmejonk(xid)
 		if ok {
 			trackback(xid, r)
