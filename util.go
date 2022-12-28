@@ -160,7 +160,7 @@ func deluser(username string) {
 	sqlMustQuery(db, "delete from chonks where userid = ?", userid)
 	sqlMustQuery(db, "delete from honkers where userid = ?", userid)
 	sqlMustQuery(db, "delete from zonkers where userid = ?", userid)
-	sqlMustQuery(db, "delete from doovers where userid = ?", userid)
+	sqlMustQuery(db, "delete from resubmissions where userid = ?", userid)
 	sqlMustQuery(db, "delete from hfcs where userid = ?", userid)
 	sqlMustQuery(db, "delete from auth where userid = ?", userid)
 	sqlMustQuery(db, "delete from users where userid = ?", userid)

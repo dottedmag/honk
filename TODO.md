@@ -5,7 +5,6 @@
   * deliverate
   * demoji
   * donk
-  * doover
   * dub
   * emu
   * endoftheworld

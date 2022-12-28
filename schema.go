@@ -113,8 +113,8 @@ create table zonkers (
 );
 create index idx_zonkersname on zonkers(name);
 
-create table doovers(
-  dooverid integer primary key,
+create table resubmissions(
+  resubmissionid integer primary key,
   dt text,
   tries integer,
   userid integer,

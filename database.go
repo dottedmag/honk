@@ -1098,7 +1098,7 @@ var stmtHonksByHonker, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
 var stmtEventHonks, stmtOneShare, stmtFindZonk, stmtFindXonk, stmtSaveDonk *sql.Stmt
 var stmtFindFile, stmtGetFileData, stmtSaveFileData, stmtSaveFile *sql.Stmt
 var stmtCheckFileData *sql.Stmt
-var stmtAddDoover, stmtGetDoovers, stmtLoadDoover, stmtZapDoover, stmtOneHonker *sql.Stmt
+var stmtAddResubmission, stmtGetResubmissions, stmtLoadResubmission, stmtDeleteResubmission, stmtOneHonker *sql.Stmt
 var stmtUntagged, stmtDeleteHonk, stmtDeleteDonks, stmtDeleteOnts, stmtSaveZonker *sql.Stmt
 var stmtGetZonkers, stmtRecentHonkers, stmtGetXonker, stmtSaveXonker, stmtDeleteXonker, stmtDeleteOldXonkers *sql.Stmt
 var stmtAllOnts, stmtSaveOnt, stmtUpdateFlags, stmtClearFlags *sql.Stmt
@@ -1170,10 +1170,10 @@ func prepareStatements(db *sql.DB) {
 	stmtUserByName = sqlMustPrepare(db, "select userid, username, displayname, about, pubkey, seckey, options from users where username = ?")
 	stmtUserByNumber = sqlMustPrepare(db, "select userid, username, displayname, about, pubkey, seckey, options from users where userid = ?")
 	stmtSaveDub = sqlMustPrepare(db, "insert into honkers (userid, name, xid, flavor, combos, owner, meta, folxid) values (?, ?, ?, ?, '', '', '', ?)")
-	stmtAddDoover = sqlMustPrepare(db, "insert into doovers (dt, tries, userid, rcpt, msg) values (?, ?, ?, ?, ?)")
-	stmtGetDoovers = sqlMustPrepare(db, "select dooverid, dt from doovers")
-	stmtLoadDoover = sqlMustPrepare(db, "select tries, userid, rcpt, msg from doovers where dooverid = ?")
-	stmtZapDoover = sqlMustPrepare(db, "delete from doovers where dooverid = ?")
+	stmtAddResubmission = sqlMustPrepare(db, "insert into resubmissions (dt, tries, userid, rcpt, msg) values (?, ?, ?, ?, ?)")
+	stmtGetResubmissions = sqlMustPrepare(db, "select resubmissionid, dt from resubmissions")
+	stmtLoadResubmission = sqlMustPrepare(db, "select tries, userid, rcpt, msg from resubmissions where resubmissionid = ?")
+	stmtDeleteResubmission = sqlMustPrepare(db, "delete resubmissions resubmissions where resubmissionid = ?")
 	stmtUntagged = sqlMustPrepare(db, "select xid, rid, flags from (select honkid, xid, rid, flags from honks where userid = ? order by honkid desc limit 10000) order by honkid asc")
 	stmtFindZonk = sqlMustPrepare(db, "select zonkerid from zonkers where userid = ? and name = ? and wherefore = 'zonk'")
 	stmtGetZonkers = sqlMustPrepare(db, "select zonkerid, name, wherefore from zonkers where userid = ? and wherefore <> 'zonk'")

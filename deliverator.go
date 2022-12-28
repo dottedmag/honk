@@ -23,7 +23,7 @@ import (
 	"humungus.tedunangst.com/r/webs/gate"
 )
 
-type Doover struct {
+type Resubmission struct {
 	ID   int64
 	When time.Time
 }
@@ -48,9 +48,9 @@ func calculateExpBackoff(retries int64, userid int64, rcpt string, msg []byte) {
 	}
 	drift += time.Duration(notrand.Int63n(int64(drift / 10)))
 	when := time.Now().Add(drift)
-	_, err := stmtAddDoover.Exec(when.UTC().Format(dbtimeformat), retries, userid, rcpt, msg)
+	_, err := stmtAddResubmission.Exec(when.UTC().Format(dbtimeformat), retries, userid, rcpt, msg)
 	if err != nil {
-		elog.Printf("error saving doover: %s", err)
+		elog.Printf("error saving resubmission: %s", err)
 	}
 	select {
 	case forceDeliveryCh <- 0:
@@ -66,7 +66,7 @@ func clearoutbound(rcpt string) {
 	xid := fmt.Sprintf("%%https://%s/%%", hostname)
 	ilog.Printf("clearing outbound for %s", xid)
 	db := opendatabase()
-	db.Exec("delete from doovers where rcpt like ?", xid)
+	db.Exec("delete from resubmissions where rcpt like ?", xid)
 }
 
 var garage = gate.NewLimiter(40)
@@ -107,27 +107,27 @@ func deliverate(retries int64, userid int64, rcpt string, msg []byte, prio bool)
 
 var forceDeliveryCh = make(chan int, 1)
 
-func getdoovers() []Doover {
-	rows, err := stmtGetDoovers.Query()
+func getResubmissions() []Resubmission {
+	rows, err := stmtGetResubmissions.Query()
 	if err != nil {
 		elog.Printf("wat?")
 		time.Sleep(1 * time.Minute)
 		return nil
 	}
 	defer rows.Close()
-	var doovers []Doover
+	var resubmissions []Resubmission
 	for rows.Next() {
-		var d Doover
+		var d Resubmission
 		var dt string
 		err := rows.Scan(&d.ID, &dt)
 		if err != nil {
-			elog.Printf("error scanning dooverid: %s", err)
+			elog.Printf("error scanning resubmissionid: %s", err)
 			continue
 		}
 		d.When, _ = time.Parse(dbtimeformat, dt)
-		doovers = append(doovers, d)
+		resubmissions = append(resubmissions, d)
 	}
-	return doovers
+	return resubmissions
 }
 
 func redeliveryLoop() {
@@ -142,24 +142,24 @@ func redeliveryLoop() {
 		case <-sleeper.C:
 		}
 
-		doovers := getdoovers()
+		resubmissions := getResubmissions()
 
 		now := time.Now()
 		nexttime := now.Add(24 * time.Hour)
-		for _, d := range doovers {
+		for _, d := range resubmissions {
 			if d.When.Before(now) {
 				var retries, userid int64
 				var rcpt string
 				var msg []byte
-				row := stmtLoadDoover.QueryRow(d.ID)
+				row := stmtLoadResubmission.QueryRow(d.ID)
 				err := row.Scan(&retries, &userid, &rcpt, &msg)
 				if err != nil {
-					elog.Printf("error scanning doover: %s", err)
+					elog.Printf("error scanning resubmission: %s", err)
 					continue
 				}
-				_, err = stmtZapDoover.Exec(d.ID)
+				_, err = stmtDeleteResubmission.Exec(d.ID)
 				if err != nil {
-					elog.Printf("error deleting doover: %s", err)
+					elog.Printf("error deleting resubmission: %s", err)
 					continue
 				}
 				ilog.Printf("redeliverating %s try %d", rcpt, retries)

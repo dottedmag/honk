@@ -272,7 +272,7 @@ func unplugserver(hostname string) {
 	db := opendatabase()
 	xid := fmt.Sprintf("%%https://%s/%%", hostname)
 	db.Exec("delete from honkers where xid like ? and flavor = 'dub'", xid)
-	db.Exec("delete from doovers where rcpt like ?", xid)
+	db.Exec("delete from resubmissions where rcpt like ?", xid)
 }
 
 func reexecArgs(cmd string) []string {
