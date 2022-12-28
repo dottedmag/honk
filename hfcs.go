@@ -16,6 +16,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"regexp"
 	"sort"
@@ -93,7 +94,7 @@ func filtcachefiller(userid int64) (afiltermap, bool) {
 		var filterid int64
 		err = rows.Scan(&filterid, &j)
 		if err == nil {
-			err = decodeJson(j, filt)
+			err = json.Unmarshal([]byte(j), filt)
 		}
 		if err != nil {
 			elog.Printf("error scanning filter: %s", err)

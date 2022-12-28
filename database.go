@@ -48,7 +48,7 @@ func userfromrow(row *sql.Row) (*UserProfile, error) {
 	}
 	if user.ID > 0 {
 		user.URL = fmt.Sprintf("https://%s/%s/%s", serverName, userSep, user.Name)
-		err = decodeJson(options, &user.Options)
+		err = json.Unmarshal([]byte(options), &user.Options)
 		if err != nil {
 			elog.Printf("error processing user options: %s", err)
 		}
@@ -120,7 +120,7 @@ func gethonkers(userid int64) []*Honker {
 		var combos, meta string
 		err = rows.Scan(&h.ID, &h.UserID, &h.Name, &h.XID, &h.Flavor, &combos, &meta)
 		if err == nil {
-			err = decodeJson(meta, &h.Meta)
+			err = json.Unmarshal([]byte(meta), &h.Meta)
 		}
 		if err != nil {
 			elog.Printf("error scanning honker: %s", err)
@@ -465,7 +465,7 @@ func donksforhonks(honks []*ActivityPubActivity) {
 		switch genus {
 		case "place":
 			p := new(Place)
-			err = decodeJson(j, p)
+			err = json.Unmarshal([]byte(j), p)
 			if err != nil {
 				elog.Printf("error parsing place: %s", err)
 				continue
@@ -473,20 +473,20 @@ func donksforhonks(honks []*ActivityPubActivity) {
 			h.Place = p
 		case "time":
 			t := new(Time)
-			err = decodeJson(j, t)
+			err = json.Unmarshal([]byte(j), t)
 			if err != nil {
 				elog.Printf("error parsing time: %s", err)
 				continue
 			}
 			h.Time = t
 		case "mentions":
-			err = decodeJson(j, &h.Mentions)
+			err = json.Unmarshal([]byte(j), &h.Mentions)
 			if err != nil {
 				elog.Printf("error parsing mentions: %s", err)
 				continue
 			}
 		case "reactions":
-			err = decodeJson(j, &h.Reactions)
+			err = json.Unmarshal([]byte(j), &h.Reactions)
 			if err != nil {
 				elog.Printf("error parsing reactions: %s", err)
 				continue
@@ -957,12 +957,6 @@ func encodeJson(what interface{}) (string, error) {
 	e.SetIndent("", "")
 	err := e.Encode(what)
 	return buf.String(), err
-}
-
-func decodeJson(s string, dest interface{}) error {
-	d := json.NewDecoder(strings.NewReader(s))
-	err := d.Decode(dest)
-	return err
 }
 
 func getxonker(what, flav string) string {
