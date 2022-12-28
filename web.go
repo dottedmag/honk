@@ -800,16 +800,17 @@ func showontology(w http.ResponseWriter, r *http.Request) {
 
 		user := getserveruser()
 
-		j := junk.New()
-		j["@context"] = atContextString
-		j["id"] = fmt.Sprintf("https://%s/o/%s", serverName, name)
-		j["name"] = "#" + name
-		j["attributedTo"] = user.URL
-		j["type"] = "OrderedCollection"
-		j["totalItems"] = len(xids)
-		j["orderedItems"] = xids
+		j := tj.O{
+			"@context":     atContextString,
+			"id":           fmt.Sprintf("https://%s/o/%s", serverName, name),
+			"name":         "#" + name,
+			"attributedTo": user.URL,
+			"type":         "OrderedCollection",
+			"totalItems":   len(xids),
+			"orderedItems": xids,
+		}
 
-		j.Write(w)
+		must.OK(json.NewEncoder(w).Encode(j))
 		return
 	}
 
@@ -2069,17 +2070,18 @@ func webfinger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	j := junk.New()
-	j["subject"] = fmt.Sprintf("acct:%s@%s", user.Name, masqName)
-	j["aliases"] = []string{user.URL}
-	l := junk.New()
-	l["rel"] = "self"
-	l["type"] = `application/activity+json`
-	l["href"] = user.URL
-	j["links"] = []junk.Junk{l}
+	j := tj.O{
+		"subject": fmt.Sprintf("acct:%s@%s", user.Name, masqName),
+		"aliases": []string{user.URL},
+		"links": tj.O{
+			"rel":  "self",
+			"type": `application/activity+json`,
+			"href": user.URL,
+		},
+	}
 
 	w.Header().Set("Content-Type", "application/jrd+json")
-	j.Write(w)
+	must.OK(json.NewEncoder(w).Encode(j))
 }
 
 func somedays() string {
