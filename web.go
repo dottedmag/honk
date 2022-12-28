@@ -38,6 +38,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+	"github.com/ridge/tj"
 	"humungus.tedunangst.com/r/webs/cache"
 	"humungus.tedunangst.com/r/webs/httpsig"
 	"humungus.tedunangst.com/r/webs/junk"
@@ -277,18 +278,19 @@ func pong(user *UserProfile, who string, obj string) {
 		ilog.Printf("no inbox to pong %s", who)
 		return
 	}
-	j := junk.New()
-	j["@context"] = atContextString
-	j["type"] = "Pong"
-	j["id"] = user.URL + "/pong/" + make18CharRandomString()
-	j["actor"] = user.URL
-	j["to"] = who
-	j["object"] = obj
+	j := tj.O{
+		"@context": atContextString,
+		"type":     "Pong",
+		"id":       user.URL + "/pong/" + make18CharRandomString(),
+		"actor":    user.URL,
+		"to":       who,
+		"object":   obj,
+	}
 	ki := getPrivateKey(user.ID)
 	if ki == nil {
 		return
 	}
-	err := PostJunk(ki.keyname, ki.seckey, box.In, j)
+	err := PostJSON(ki.keyname, ki.seckey, box.In, j)
 	if err != nil {
 		elog.Printf("can't send pong: %s", err)
 		return
