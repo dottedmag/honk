@@ -340,7 +340,7 @@ func inbox(w http.ResponseWriter, r *http.Request) {
 
 	keyname, err := httpsig.VerifyRequest(r, payload, getPubKey)
 	if err != nil && keyname != "" {
-		savingthrow(keyname)
+		removeOldPubkey(keyname)
 		keyname, err = httpsig.VerifyRequest(r, payload, getPubKey)
 	}
 	if err != nil {
@@ -452,7 +452,7 @@ func serverinbox(w http.ResponseWriter, r *http.Request) {
 	}
 	keyname, err := httpsig.VerifyRequest(r, payload, getPubKey)
 	if err != nil && keyname != "" {
-		savingthrow(keyname)
+		removeOldPubkey(keyname)
 		keyname, err = httpsig.VerifyRequest(r, payload, getPubKey)
 	}
 	if err != nil {

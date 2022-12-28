@@ -671,7 +671,7 @@ func getPubKey(keyname string) (httpsig.PublicKey, error) {
 	return key, nil
 }
 
-func savingthrow(keyname string) {
+func removeOldPubkey(keyname string) {
 	when := time.Now().Add(-30 * time.Minute).UTC().Format(dbtimeformat)
 	stmtDeleteXonker.Exec(keyname, "pubkey", when)
 	zaggies.Clear(keyname)
