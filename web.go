@@ -611,15 +611,16 @@ var oldoutbox = cache.New(cache.Options{Filler: func(name string) ([]byte, bool)
 		jonks = append(jonks, j)
 	}
 
-	j := junk.New()
-	j["@context"] = atContextString
-	j["id"] = user.URL + "/outbox"
-	j["attributedTo"] = user.URL
-	j["type"] = "OrderedCollection"
-	j["totalItems"] = len(jonks)
-	j["orderedItems"] = jonks
+	j := tj.O{
+		"@context":     atContextString,
+		"id":           user.URL + "/outbox",
+		"attributedTo": user.URL,
+		"type":         "OrderedCollection",
+		"totalItems":   len(jonks),
+		"orderedItems": jonks,
+	}
 
-	return j.ToBytes(), true
+	return must.OK1(json.Marshal(j)), true
 }, Duration: 1 * time.Minute})
 
 func outbox(w http.ResponseWriter, r *http.Request) {
@@ -2393,9 +2394,9 @@ func apihandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		reverbolate(userid, honks)
-		j := junk.New()
-		j["honks"] = honks
-		j.Write(w)
+		must.OK(json.NewEncoder(w).Encode(tj.O{
+			"honks": honks,
+		}))
 	case "sendactivity":
 		user, _ := getUserBio(u.Username)
 		public := r.FormValue("public") == "1"
