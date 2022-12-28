@@ -1,7 +1,7 @@
 {{ $ShareCSRF := .HonkCSRF }}
 {{ $MapLink := .MapLink }}
-{{ $Badonk := .User.Options.Reaction }}
+{{ $Reaction := .User.Options.Reaction }}
 {{ $OmitImages := .User.Options.OmitImages }}
 {{ range .Honks }}
-  {{ template "honk.html" map "Honk" . "MapLink" $MapLink "ShareCSRF" $ShareCSRF "Badonk" $Badonk "OmitImages" $OmitImages }}
+  {{ template "honk.html" map "Honk" . "MapLink" $MapLink "ShareCSRF" $ShareCSRF "Reaction" $Reaction "OmitImages" $OmitImages }}
 {{ end }}

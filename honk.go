@@ -72,42 +72,42 @@ const serverUID int64 = -2
 
 // ActivityPubActivity used to be a Xonk
 type ActivityPubActivity struct {
-	ID       int64
-	UserID   int64
-	Username string
-	What     string
-	Honker   string
-	Handle   string
-	Handles  string
-	Oonker   string
-	Oondle   string
-	XID      string
-	RID      string
-	Date     time.Time
-	URL      string
-	Noise    string
-	Precis   string
-	Format   string
-	Thread   string
-	Audience []string
-	Public   bool
-	Whofore  int64
-	Replies  []*ActivityPubActivity
-	Flags    int64
-	HTPrecis template.HTML
-	HTML     template.HTML
-	Style    string
-	Open     string
-	Donks    []*Donk
-	Onts     []string
-	Place    *Place
-	Time     *Time
-	Mentions []Mention
-	Badonks  []Badonk
-	Guesses  template.HTML
+	ID        int64
+	UserID    int64
+	Username  string
+	What      string
+	Honker    string
+	Handle    string
+	Handles   string
+	Oonker    string
+	Oondle    string
+	XID       string
+	RID       string
+	Date      time.Time
+	URL       string
+	Noise     string
+	Precis    string
+	Format    string
+	Thread    string
+	Audience  []string
+	Public    bool
+	Whofore   int64
+	Replies   []*ActivityPubActivity
+	Flags     int64
+	HTPrecis  template.HTML
+	HTML      template.HTML
+	Style     string
+	Open      string
+	Donks     []*Donk
+	Onts      []string
+	Place     *Place
+	Time      *Time
+	Mentions  []Mention
+	Reactions []Reaction
+	Guesses   template.HTML
 }
 
-type Badonk struct {
+type Reaction struct {
 	Who  string
 	What string
 }

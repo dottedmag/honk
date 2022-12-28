@@ -485,10 +485,10 @@ func donksforhonks(honks []*ActivityPubActivity) {
 				elog.Printf("error parsing mentions: %s", err)
 				continue
 			}
-		case "badonks":
-			err = decodeJson(j, &h.Badonks)
+		case "reactions":
+			err = decodeJson(j, &h.Reactions)
 			if err != nil {
-				elog.Printf("error parsing badonks: %s", err)
+				elog.Printf("error parsing reactions: %s", err)
 				continue
 			}
 		case "guesses":
@@ -921,12 +921,12 @@ func addReaction(user *UserProfile, xid string, who, react string) {
 	if h == nil {
 		return
 	}
-	h.Badonks = append(h.Badonks, Badonk{Who: who, What: react})
-	j, _ := encodeJson(h.Badonks)
+	h.Reactions = append(h.Reactions, Reaction{Who: who, What: react})
+	j, _ := encodeJson(h.Reactions)
 	db := opendatabase()
 	tx, _ := db.Begin()
-	_, _ = tx.Stmt(stmtDeleteOneMeta).Exec(h.ID, "badonks")
-	_, _ = tx.Stmt(stmtSaveMeta).Exec(h.ID, "badonks", j)
+	_, _ = tx.Stmt(stmtDeleteOneMeta).Exec(h.ID, "reactions")
+	_, _ = tx.Stmt(stmtSaveMeta).Exec(h.ID, "reactions", j)
 	tx.Commit()
 }
 

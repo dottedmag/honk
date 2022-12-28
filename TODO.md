@@ -10,7 +10,7 @@
   * endoftheworld
   * friendorfoe
   * grapevine
-  * hfcs
+  * hfcs (honk filtering and censoring system)
   * honk
   * honker (subscribed?)
   * imaginate
