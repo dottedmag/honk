@@ -253,17 +253,18 @@ func ping(user *UserProfile, who string) {
 		return
 	}
 	ilog.Printf("sending ping to %s", box.In)
-	j := junk.New()
-	j["@context"] = atContextString
-	j["type"] = "Ping"
-	j["id"] = user.URL + "/ping/" + make18CharRandomString()
-	j["actor"] = user.URL
-	j["to"] = who
+	j := tj.O{
+		"@context": atContextString,
+		"type":     "Ping",
+		"id":       user.URL + "/ping/" + make18CharRandomString(),
+		"actor":    user.URL,
+		"to":       who,
+	}
 	ki := getPrivateKey(user.ID)
 	if ki == nil {
 		return
 	}
-	err := PostJunk(ki.keyname, ki.seckey, box.In, j)
+	err := PostJSON(ki.keyname, ki.seckey, box.In, j)
 	if err != nil {
 		elog.Printf("can't send ping: %s", err)
 		return
