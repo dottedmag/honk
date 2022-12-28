@@ -53,7 +53,7 @@ func calculateExpBackoff(retries int64, userid int64, rcpt string, msg []byte) {
 		elog.Printf("error saving doover: %s", err)
 	}
 	select {
-	case pokechan <- 0:
+	case forceDeliveryCh <- 0:
 	default:
 	}
 }
@@ -105,7 +105,7 @@ func deliverate(retries int64, userid int64, rcpt string, msg []byte, prio bool)
 	}
 }
 
-var pokechan = make(chan int, 1)
+var forceDeliveryCh = make(chan int, 1)
 
 func getdoovers() []Doover {
 	rows, err := stmtGetDoovers.Query()
@@ -134,7 +134,7 @@ func redeliveryLoop() {
 	sleeper := time.NewTimer(5 * time.Second)
 	for {
 		select {
-		case <-pokechan:
+		case <-forceDeliveryCh:
 			if !sleeper.Stop() {
 				<-sleeper.C
 			}
