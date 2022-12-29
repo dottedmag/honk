@@ -1791,28 +1791,28 @@ func showchatter(w http.ResponseWriter, r *http.Request) {
 	chatnewnone(u.UserID)
 	chatter := loadchatter(u.UserID)
 	for _, chat := range chatter {
-		for _, ch := range chat.Chonks {
-			filterchonk(ch)
+		for _, ch := range chat.ChatMessages {
+			filterChatMessage(ch)
 		}
 	}
 
 	templinfo := getInfo(r)
 	templinfo["Chatter"] = chatter
-	templinfo["ChonkCSRF"] = login.GetCSRF("sendchonk", r)
+	templinfo["ChatMessageCSRF"] = login.GetCSRF("sendChatMessage", r)
 	err := readviews.Execute(w, "chatter.html", templinfo)
 	if err != nil {
 		elog.Print(err)
 	}
 }
 
-func submitchonk(w http.ResponseWriter, r *http.Request) {
+func submitChatMessage(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
 	user, _ := getUserBio(u.Username)
 	noise := r.FormValue("noise")
 	target := r.FormValue("target")
 	format := "markdown"
 	dt := time.Now().UTC()
-	xid := fmt.Sprintf("%s/%s/%s", user.URL, "chonk", make18CharRandomString())
+	xid := fmt.Sprintf("%s/%s/%s", user.URL, "chatMessage", make18CharRandomString())
 
 	if !strings.HasPrefix(target, "https://") {
 		target = fullname(target, u.UserID)
@@ -1821,7 +1821,7 @@ func submitchonk(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "who is that?", http.StatusInternalServerError)
 		return
 	}
-	ch := Chonk{
+	ch := ChatMessage{
 		UserID: u.UserID,
 		XID:    xid,
 		Who:    user.URL,
@@ -1838,12 +1838,12 @@ func submitchonk(w http.ResponseWriter, r *http.Request) {
 		ch.Attachments = append(ch.Attachments, d)
 	}
 
-	translatechonk(&ch)
-	savechonk(&ch)
+	translateChatMessage(&ch)
+	saveChatMessage(&ch)
 	// reload for consistency
 	ch.Attachments = nil
-	attachmentsForChonks([]*Chonk{&ch})
-	go sendchonk(user, &ch)
+	attachmentsForChatMessages([]*ChatMessage{&ch})
+	go sendChatMessage(user, &ch)
 
 	http.Redirect(w, r, "/chatter", http.StatusSeeOther)
 }
@@ -2574,7 +2574,7 @@ func serve() {
 	LoggedInRouter.Use(login.Required)
 	LoggedInRouter.HandleFunc("/first", homepage)
 	LoggedInRouter.HandleFunc("/chatter", showchatter)
-	LoggedInRouter.Handle("/sendchonk", login.CSRFWrap("sendchonk", http.HandlerFunc(submitchonk)))
+	LoggedInRouter.Handle("/sendChatMessage", login.CSRFWrap("sendChatMessage", http.HandlerFunc(submitChatMessage)))
 	LoggedInRouter.HandleFunc("/saved", homepage)
 	LoggedInRouter.HandleFunc("/account", accountpage)
 	LoggedInRouter.HandleFunc("/chpass", dochpass)

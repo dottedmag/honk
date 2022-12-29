@@ -682,7 +682,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			what = "event"
 		case "ChatMessage":
 			obj = item
-			what = "chonk"
+			what = "chatMessage"
 		default:
 			ilog.Printf("unknown activity: %s", what)
 			dumpactivity(item)
@@ -979,8 +979,8 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		}
 		imaginate(&xonk)
 
-		if what == "chonk" {
-			ch := Chonk{
+		if what == "chatMessage" {
+			ch := ChatMessage{
 				UserID:      xonk.UserID,
 				XID:         xid,
 				Who:         xonk.Honker,
@@ -990,7 +990,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 				Format:      xonk.Format,
 				Attachments: xonk.Attachments,
 			}
-			savechonk(&ch)
+			saveChatMessage(&ch)
 			return nil
 		}
 
@@ -1360,7 +1360,7 @@ func boxuprcpts(user *UserProfile, addresses []string, useshared bool) map[strin
 	return rcpts
 }
 
-func chonkifymsg(user *UserProfile, ch *Chonk) []byte {
+func serializeChatMessage(user *UserProfile, ch *ChatMessage) []byte {
 	dt := ch.Date.Format(time.RFC3339)
 	aud := []string{ch.Target}
 
@@ -1404,8 +1404,8 @@ func chonkifymsg(user *UserProfile, ch *Chonk) []byte {
 	return j.ToBytes()
 }
 
-func sendchonk(user *UserProfile, ch *Chonk) {
-	msg := chonkifymsg(user, ch)
+func sendChatMessage(user *UserProfile, ch *ChatMessage) {
+	msg := serializeChatMessage(user, ch)
 
 	rcpts := make(map[string]bool)
 	rcpts[ch.Target] = true

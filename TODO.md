@@ -1,6 +1,5 @@
 * Split user and public services
 * Renames
-  * chonk
   * crappola
   * deliverate
   * demoji

@@ -112,7 +112,7 @@ type Reaction struct {
 	What string
 }
 
-type Chonk struct {
+type ChatMessage struct {
 	ID          int64
 	UserID      int64
 	XID         string
@@ -127,8 +127,8 @@ type Chonk struct {
 }
 
 type Chatter struct {
-	Target string
-	Chonks []*Chonk
+	Target       string
+	ChatMessages []*ChatMessage
 }
 
 type Mention struct {

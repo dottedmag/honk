@@ -52,8 +52,8 @@ create index idx_honksthread on honks(thread);
 create index idx_honkshonker on honks(honker);
 create index idx_honksoonker on honks(oonker);
 
-create table chonks (
-  chonkid integer primary key,
+create table chatMessages (
+  chatMessageId integer primary key,
   userid integer,
   xid text,
   who txt,
@@ -65,11 +65,11 @@ create table chonks (
 
 create table attachments (
   honkid integer,
-  chonkid integer,
+  chatMessageId integer,
   fileid integer
 );
-create index idx_attachmentShonk on attachments(honkid);
-create index idx_attachmentSchonk on attachments(chonkid);
+create index idx_attachmentsHonk on attachments(honkid);
+create index idx_attachmentsChatMessageId on attachments(chatMessageId);
 
 create table filemeta (
   fileid integer primary key,

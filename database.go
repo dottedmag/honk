@@ -501,17 +501,17 @@ func attachmentsForHonks(honks []*ActivityPubActivity) {
 	rows.Close()
 }
 
-func attachmentsForChonks(chonks []*Chonk) {
+func attachmentsForChatMessages(chatMessages []*ChatMessage) {
 	db := opendatabase()
 	var ids []string
-	chmap := make(map[int64]*Chonk)
-	for _, ch := range chonks {
+	chmap := make(map[int64]*ChatMessage)
+	for _, ch := range chatMessages {
 		ids = append(ids, fmt.Sprintf("%d", ch.ID))
 		chmap[ch.ID] = ch
 	}
 	idset := strings.Join(ids, ",")
 	// grab attachments
-	q := fmt.Sprintf("select chonkid, attachments.fileid, xid, name, description, url, media, local from attachments join filemeta on attachments.fileid = filemeta.fileid where chonkid in (%s)", idset)
+	q := fmt.Sprintf("select chatMessageId, attachments.fileid, xid, name, description, url, media, local from attachments join filemeta on attachments.fileid = filemeta.fileid where chatMessageId in (%s)", idset)
 	rows, err := db.Query(q)
 	if err != nil {
 		elog.Printf("error querying attachments: %s", err)
@@ -594,7 +594,7 @@ func findAttachment(url string) *Attachment {
 	return nil
 }
 
-func savechonk(ch *Chonk) error {
+func saveChatMessage(ch *ChatMessage) error {
 	dt := ch.Date.UTC().Format(dbtimeformat)
 	db := opendatabase()
 	tx, err := db.Begin()
@@ -603,7 +603,7 @@ func savechonk(ch *Chonk) error {
 		return err
 	}
 
-	res, err := tx.Stmt(stmtSaveChonk).Exec(ch.UserID, ch.XID, ch.Who, ch.Target, dt, ch.Noise, ch.Format)
+	res, err := tx.Stmt(stmtSaveChatMessage).Exec(ch.UserID, ch.XID, ch.Who, ch.Target, dt, ch.Noise, ch.Format)
 	if err == nil {
 		ch.ID, _ = res.LastInsertId()
 		for _, d := range ch.Attachments {
@@ -701,27 +701,27 @@ func menewnone(userid int64) {
 
 func loadchatter(userid int64) []*Chatter {
 	duedt := time.Now().Add(-3 * 24 * time.Hour).UTC().Format(dbtimeformat)
-	rows, err := stmtLoadChonks.Query(userid, duedt)
+	rows, err := stmtLoadChatMessages.Query(userid, duedt)
 	if err != nil {
-		elog.Printf("error loading chonks: %s", err)
+		elog.Printf("error loading chat messages: %s", err)
 		return nil
 	}
 	defer rows.Close()
-	chonks := make(map[string][]*Chonk)
-	var allchonks []*Chonk
+	chatMessages := make(map[string][]*ChatMessage)
+	var allChatMessages []*ChatMessage
 	for rows.Next() {
-		ch := new(Chonk)
+		ch := new(ChatMessage)
 		var dt string
 		err = rows.Scan(&ch.ID, &ch.UserID, &ch.XID, &ch.Who, &ch.Target, &dt, &ch.Noise, &ch.Format)
 		if err != nil {
-			elog.Printf("error scanning chonk: %s", err)
+			elog.Printf("error scanning chat message: %s", err)
 			continue
 		}
 		ch.Date, _ = time.Parse(dbtimeformat, dt)
-		chonks[ch.Target] = append(chonks[ch.Target], ch)
-		allchonks = append(allchonks, ch)
+		chatMessages[ch.Target] = append(chatMessages[ch.Target], ch)
+		allChatMessages = append(allChatMessages, ch)
 	}
-	attachmentsForChonks(allchonks)
+	attachmentsForChatMessages(allChatMessages)
 	rows.Close()
 	rows, err = stmtGetChatters.Query(userid)
 	if err != nil {
@@ -735,27 +735,27 @@ func loadchatter(userid int64) []*Chatter {
 			elog.Printf("error scanning chatter: %s", target)
 			continue
 		}
-		if _, ok := chonks[target]; !ok {
-			chonks[target] = []*Chonk{}
+		if _, ok := chatMessages[target]; !ok {
+			chatMessages[target] = []*ChatMessage{}
 
 		}
 	}
 	var chatter []*Chatter
-	for target, chonks := range chonks {
+	for target, chatMessages := range chatMessages {
 		chatter = append(chatter, &Chatter{
 			Target: target,
-			Chonks: chonks,
+			ChatMessages: chatMessages,
 		})
 	}
 	sort.Slice(chatter, func(i, j int) bool {
 		a, b := chatter[i], chatter[j]
-		if len(a.Chonks) == 0 || len(b.Chonks) == 0 {
-			if len(a.Chonks) == len(b.Chonks) {
+		if len(a.ChatMessages) == 0 || len(b.ChatMessages) == 0 {
+			if len(a.ChatMessages) == len(b.ChatMessages) {
 				return a.Target < b.Target
 			}
-			return len(a.Chonks) > len(b.Chonks)
+			return len(a.ChatMessages) > len(b.ChatMessages)
 		}
-		return a.Chonks[len(a.Chonks)-1].Date.After(b.Chonks[len(b.Chonks)-1].Date)
+		return a.ChatMessages[len(a.ChatMessages)-1].Date.After(b.ChatMessages[len(b.ChatMessages)-1].Date)
 	})
 
 	return chatter
@@ -1100,7 +1100,7 @@ var stmtHonksForUserFirstClass *sql.Stmt
 var stmtSaveMeta, stmtDeleteAllMeta, stmtDeleteOneMeta, stmtDeleteSomeMeta, stmtUpdateHonk *sql.Stmt
 var stmtHonksISaved, stmtGetFilters, stmtSaveFilter, stmtDeleteFilter *sql.Stmt
 var stmtGetTracks *sql.Stmt
-var stmtSaveChonk, stmtLoadChonks, stmtGetChatters *sql.Stmt
+var stmtSaveChatMessage, stmtLoadChatMessages, stmtGetChatters *sql.Stmt
 var stmtGetTopDubbed *sql.Stmt
 
 func sqlMustPrepare(db *sql.DB, s string) *sql.Stmt {
@@ -1152,7 +1152,7 @@ func prepareStatements(db *sql.DB) {
 	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, noise = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
 	stmtSaveOnt = sqlMustPrepare(db, "insert into onts (ontology, honkid) values (?, ?)")
 	stmtDeleteOnts = sqlMustPrepare(db, "delete from onts where honkid = ?")
-	stmtSaveAttachment = sqlMustPrepare(db, "insert into attachments (honkid, chonkid, fileid) values (?, ?, ?)")
+	stmtSaveAttachment = sqlMustPrepare(db, "insert into attachments (honkid, chatMessageId, fileid) values (?, ?, ?)")
 	stmtDeleteAttachments = sqlMustPrepare(db, "delete from attachments where honkid = ?")
 	stmtSaveFile = sqlMustPrepare(db, "insert into filemeta (xid, name, description, url, media, local) values (?, ?, ?, ?, ?, ?)")
 	blobdb := openblobdb()
@@ -1184,8 +1184,8 @@ func prepareStatements(db *sql.DB) {
 	stmtSaveFilter = sqlMustPrepare(db, "insert into hfcs (userid, json) values (?, ?)")
 	stmtDeleteFilter = sqlMustPrepare(db, "delete from hfcs where userid = ? and hfcsid = ?")
 	stmtGetTracks = sqlMustPrepare(db, "select fetches from tracks where xid = ?")
-	stmtSaveChonk = sqlMustPrepare(db, "insert into chonks (userid, xid, who, target, dt, noise, format) values (?, ?, ?, ?, ?, ?, ?)")
-	stmtLoadChonks = sqlMustPrepare(db, "select chonkid, userid, xid, who, target, dt, noise, format from chonks where userid = ? and dt > ? order by chonkid asc")
-	stmtGetChatters = sqlMustPrepare(db, "select distinct(target) from chonks where userid = ?")
+	stmtSaveChatMessage = sqlMustPrepare(db, "insert into chatMessages (userid, xid, who, target, dt, noise, format) values (?, ?, ?, ?, ?, ?, ?)")
+	stmtLoadChatMessages = sqlMustPrepare(db, "select chatMessageId, userid, xid, who, target, dt, noise, format from chatMessages where userid = ? and dt > ? order by chatMessageId asc")
+	stmtGetChatters = sqlMustPrepare(db, "select distinct(target) from chatMessages where userid = ?")
 	stmtGetTopDubbed = sqlMustPrepare(db, `SELECT COUNT(*) as c,userid FROM honkers WHERE flavor = "dub" GROUP BY userid`)
 }

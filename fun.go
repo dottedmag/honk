@@ -207,7 +207,7 @@ func replaceimgsand(zap map[string]bool, absolute bool) func(node *html.Node) st
 	}
 }
 
-func translatechonk(ch *Chonk) {
+func translateChatMessage(ch *ChatMessage) {
 	noise := ch.Noise
 	if ch.Format == "markdown" {
 		noise = markitzero(noise)
@@ -218,8 +218,8 @@ func translatechonk(ch *Chonk) {
 	ch.HTML, _ = htf.String(noise)
 }
 
-func filterchonk(ch *Chonk) {
-	translatechonk(ch)
+func filterChatMessage(ch *ChatMessage) {
+	translateChatMessage(ch)
 
 	noise := string(ch.HTML)
 

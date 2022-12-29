@@ -153,11 +153,11 @@ func deluser(username string) {
 	sqlMustQuery(db, "delete from attachments"+where, userid)
 	sqlMustQuery(db, "delete from onts"+where, userid)
 	sqlMustQuery(db, "delete from honkmeta"+where, userid)
-	where = " where chonkid in (select chonkid from chonks where userid = ?)"
+	where = " where chatMessageId in (select chatMessageId from chatMessages where userid = ?)"
 	sqlMustQuery(db, "delete from attachments"+where, userid)
 
 	sqlMustQuery(db, "delete from honks where userid = ?", userid)
-	sqlMustQuery(db, "delete from chonks where userid = ?", userid)
+	sqlMustQuery(db, "delete from chatMessages where userid = ?", userid)
 	sqlMustQuery(db, "delete from honkers where userid = ?", userid)
 	sqlMustQuery(db, "delete from zonkers where userid = ?", userid)
 	sqlMustQuery(db, "delete from resubmissions where userid = ?", userid)
