@@ -126,7 +126,7 @@ type ChatMessage struct {
 	HTML        template.HTML
 }
 
-type Chatter struct {
+type Chat struct {
 	Target       string
 	ChatMessages []*ChatMessage
 }

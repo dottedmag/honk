@@ -699,7 +699,7 @@ func menewnone(userid int64) {
 	somenumberedusers.Clear(user.ID)
 }
 
-func loadchatter(userid int64) []*Chatter {
+func loadChat(userid int64) []*Chat {
 	duedt := time.Now().Add(-3 * 24 * time.Hour).UTC().Format(dbtimeformat)
 	rows, err := stmtLoadChatMessages.Query(userid, duedt)
 	if err != nil {
@@ -723,16 +723,16 @@ func loadchatter(userid int64) []*Chatter {
 	}
 	attachmentsForChatMessages(allChatMessages)
 	rows.Close()
-	rows, err = stmtGetChatters.Query(userid)
+	rows, err = stmtGetChats.Query(userid)
 	if err != nil {
-		elog.Printf("error getting chatters: %s", err)
+		elog.Printf("error getting chats: %s", err)
 		return nil
 	}
 	for rows.Next() {
 		var target string
 		err = rows.Scan(&target)
 		if err != nil {
-			elog.Printf("error scanning chatter: %s", target)
+			elog.Printf("error scanning chat: %s", target)
 			continue
 		}
 		if _, ok := chatMessages[target]; !ok {
@@ -740,15 +740,15 @@ func loadchatter(userid int64) []*Chatter {
 
 		}
 	}
-	var chatter []*Chatter
+	var chat []*Chat
 	for target, chatMessages := range chatMessages {
-		chatter = append(chatter, &Chatter{
+		chat = append(chat, &Chat{
 			Target: target,
 			ChatMessages: chatMessages,
 		})
 	}
-	sort.Slice(chatter, func(i, j int) bool {
-		a, b := chatter[i], chatter[j]
+	sort.Slice(chat, func(i, j int) bool {
+		a, b := chat[i], chat[j]
 		if len(a.ChatMessages) == 0 || len(b.ChatMessages) == 0 {
 			if len(a.ChatMessages) == len(b.ChatMessages) {
 				return a.Target < b.Target
@@ -758,7 +758,7 @@ func loadchatter(userid int64) []*Chatter {
 		return a.ChatMessages[len(a.ChatMessages)-1].Date.After(b.ChatMessages[len(b.ChatMessages)-1].Date)
 	})
 
-	return chatter
+	return chat
 }
 
 func savehonk(h *ActivityPubActivity) error {
@@ -1100,7 +1100,7 @@ var stmtHonksForUserFirstClass *sql.Stmt
 var stmtSaveMeta, stmtDeleteAllMeta, stmtDeleteOneMeta, stmtDeleteSomeMeta, stmtUpdateHonk *sql.Stmt
 var stmtHonksISaved, stmtGetFilters, stmtSaveFilter, stmtDeleteFilter *sql.Stmt
 var stmtGetTracks *sql.Stmt
-var stmtSaveChatMessage, stmtLoadChatMessages, stmtGetChatters *sql.Stmt
+var stmtSaveChatMessage, stmtLoadChatMessages, stmtGetChats *sql.Stmt
 var stmtGetTopDubbed *sql.Stmt
 
 func sqlMustPrepare(db *sql.DB, s string) *sql.Stmt {
@@ -1186,6 +1186,6 @@ func prepareStatements(db *sql.DB) {
 	stmtGetTracks = sqlMustPrepare(db, "select fetches from tracks where xid = ?")
 	stmtSaveChatMessage = sqlMustPrepare(db, "insert into chatMessages (userid, xid, who, target, dt, noise, format) values (?, ?, ?, ?, ?, ?, ?)")
 	stmtLoadChatMessages = sqlMustPrepare(db, "select chatMessageId, userid, xid, who, target, dt, noise, format from chatMessages where userid = ? and dt > ? order by chatMessageId asc")
-	stmtGetChatters = sqlMustPrepare(db, "select distinct(target) from chatMessages where userid = ?")
+	stmtGetChats = sqlMustPrepare(db, "select distinct(target) from chatMessages where userid = ?")
 	stmtGetTopDubbed = sqlMustPrepare(db, `SELECT COUNT(*) as c,userid FROM honkers WHERE flavor = "dub" GROUP BY userid`)
 }

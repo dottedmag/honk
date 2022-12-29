@@ -3,7 +3,7 @@
 <div class="info">
 <p>
 <form action="/sendchonk" method="POST" enctype="multipart/form-data">
-<h3>new chatter</h3>
+<h3>new chat</h3>
 <input type="hidden" name="CSRF" value="{{ .ChonkCSRF }}">
 <p><label for=target>target:</label><br>
 <input type="text" name="target" value="" autocomplete=off>
@@ -20,10 +20,10 @@ function updateAttachment(el) {
 </script>
 </div>
 {{ $chonkcsrf := .ChonkCSRF }}
-{{ range .Chatter }}
+{{ range .Chat }}
 <section class="honk">
 <p class="chattarget">
-chatter: {{ .Target }}
+chat: {{ .Target }}
 {{ $target := .Target }}
 {{ range .Chonks }}
 <div class="chat">

@@ -1786,20 +1786,20 @@ func showhonkers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func showchatter(w http.ResponseWriter, r *http.Request) {
+func showChat(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
 	chatnewnone(u.UserID)
-	chatter := loadchatter(u.UserID)
-	for _, chat := range chatter {
+	chat := loadChat(u.UserID)
+	for _, chat := range chat {
 		for _, ch := range chat.ChatMessages {
 			filterChatMessage(ch)
 		}
 	}
 
 	templinfo := getInfo(r)
-	templinfo["Chatter"] = chatter
+	templinfo["Chat"] = chat
 	templinfo["ChatMessageCSRF"] = login.GetCSRF("sendChatMessage", r)
-	err := readviews.Execute(w, "chatter.html", templinfo)
+	err := readviews.Execute(w, "chat.html", templinfo)
 	if err != nil {
 		elog.Print(err)
 	}
@@ -1845,7 +1845,7 @@ func submitChatMessage(w http.ResponseWriter, r *http.Request) {
 	attachmentsForChatMessages([]*ChatMessage{&ch})
 	go sendChatMessage(user, &ch)
 
-	http.Redirect(w, r, "/chatter", http.StatusSeeOther)
+	http.Redirect(w, r, "/chat", http.StatusSeeOther)
 }
 
 var combocache = cache.New(cache.Options{Filler: func(userid int64) ([]string, bool) {
@@ -2493,7 +2493,7 @@ func serve() {
 		viewDir+"/views/honkpage.html",
 		viewDir+"/views/honkfrags.html",
 		viewDir+"/views/honkers.html",
-		viewDir+"/views/chatter.html",
+		viewDir+"/views/chat.html",
 		viewDir+"/views/hfcs.html",
 		viewDir+"/views/combos.html",
 		viewDir+"/views/honkform.html",
@@ -2573,7 +2573,7 @@ func serve() {
 	LoggedInRouter := mux.NewRoute().Subrouter()
 	LoggedInRouter.Use(login.Required)
 	LoggedInRouter.HandleFunc("/first", homepage)
-	LoggedInRouter.HandleFunc("/chatter", showchatter)
+	LoggedInRouter.HandleFunc("/chat", showChat)
 	LoggedInRouter.Handle("/sendChatMessage", login.CSRFWrap("sendChatMessage", http.HandlerFunc(submitChatMessage)))
 	LoggedInRouter.HandleFunc("/saved", homepage)
 	LoggedInRouter.HandleFunc("/account", accountpage)
