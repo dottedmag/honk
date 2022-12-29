@@ -430,11 +430,20 @@ var untagged = cache.New(cache.Options{Filler: func(userid int64) (map[string]bo
 	return bad, true
 }})
 
+func matchFilters(h *ActivityPubActivity, filts []*Filter) bool {
+	for _, f := range filts {
+		if matchfilter(h, f) {
+			return true
+		}
+	}
+	return false
+}
+
 func osmosis(honks []*ActivityPubActivity, userid int64, withfilt bool) []*ActivityPubActivity {
 	var badparents map[string]bool
 	untagged.GetAndLock(userid, &badparents)
 	j := 0
-	reversehonks(honks)
+	reverseSlice(honks)
 	for _, h := range honks {
 		if badparents[h.RID] {
 			badparents[h.XID] = true
@@ -445,18 +454,15 @@ func osmosis(honks []*ActivityPubActivity, userid int64, withfilt bool) []*Activ
 	}
 	untagged.Unlock()
 	honks = honks[0:j]
-	reversehonks(honks)
+	reverseSlice(honks)
 	if !withfilt {
 		return honks
 	}
 	filts := getfilters(userid, filtHide)
 	j = 0
-outer:
 	for _, h := range honks {
-		for _, f := range filts {
-			if matchfilter(h, f) {
-				continue outer
-			}
+		if matchFilters(h, filts) {
+			continue
 		}
 		honks[j] = h
 		j++

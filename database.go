@@ -216,7 +216,7 @@ func geteventhonks(userid int64) []*ActivityPubActivity {
 			break
 		}
 	}
-	reversehonks(honks)
+	reverseSlice(honks)
 	return honks
 }
 
@@ -348,9 +348,9 @@ func gethonksbyontology(userid int64, name string, wanted int64) []*ActivityPubA
 	return honks
 }
 
-func reversehonks(honks []*ActivityPubActivity) {
-	for i, j := 0, len(honks)-1; i < j; i, j = i+1, j-1 {
-		honks[i], honks[j] = honks[j], honks[i]
+func reverseSlice[T any](slice []T) {
+	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
+		slice[i], slice[j] = slice[j], slice[i]
 	}
 }
 

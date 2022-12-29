@@ -762,7 +762,7 @@ func showThread(w http.ResponseWriter, r *http.Request) {
 		templinfo["TopHID"] = honks[0].ID
 	}
 	honks = osmosis(honks, u.UserID, false)
-	reversehonks(honks)
+	reverseSlice(honks)
 	templinfo["PageName"] = "thread"
 	templinfo["PageArg"] = c
 	templinfo["ServerMessage"] = "honks in thread: " + c
@@ -1045,7 +1045,7 @@ func showonehonk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rawhonks := gethonksbyThread(honk.UserID, honk.Thread, 0)
-	reversehonks(rawhonks)
+	reverseSlice(rawhonks)
 	var honks []*ActivityPubActivity
 	for _, h := range rawhonks {
 		if h.XID == xid && len(honks) != 0 {
