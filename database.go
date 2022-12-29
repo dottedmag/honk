@@ -368,7 +368,7 @@ func getsomehonks(rows *sql.Rows, err error) []*ActivityPubActivity {
 		}
 	}
 	rows.Close()
-	donksforhonks(honks)
+	attachmentsForHonks(honks)
 	return honks
 }
 
@@ -393,7 +393,7 @@ func scanhonk(row RowLike) *ActivityPubActivity {
 	return h
 }
 
-func donksforhonks(honks []*ActivityPubActivity) {
+func attachmentsForHonks(honks []*ActivityPubActivity) {
 	db := opendatabase()
 	var ids []string
 	hmap := make(map[int64]*ActivityPubActivity)
@@ -402,25 +402,25 @@ func donksforhonks(honks []*ActivityPubActivity) {
 		hmap[h.ID] = h
 	}
 	idset := strings.Join(ids, ",")
-	// grab donks
-	q := fmt.Sprintf("select honkid, donks.fileid, xid, name, description, url, media, local from donks join filemeta on donks.fileid = filemeta.fileid where honkid in (%s)", idset)
+	// grab attachments
+	q := fmt.Sprintf("select honkid, attachments.fileid, xid, name, description, url, media, local from attachments join filemeta on attachments.fileid = filemeta.fileid where honkid in (%s)", idset)
 	rows, err := db.Query(q)
 	if err != nil {
-		elog.Printf("error querying donks: %s", err)
+		elog.Printf("error querying attachments: %s", err)
 		return
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var hid int64
-		d := new(Donk)
+		d := new(Attachment)
 		err = rows.Scan(&hid, &d.FileID, &d.XID, &d.Name, &d.Desc, &d.URL, &d.Media, &d.Local)
 		if err != nil {
-			elog.Printf("error scanning donk: %s", err)
+			elog.Printf("error scanning attachment: %s", err)
 			continue
 		}
 		d.External = !strings.HasPrefix(d.URL, serverPrefix)
 		h := hmap[hid]
-		h.Donks = append(h.Donks, d)
+		h.Attachments = append(h.Attachments, d)
 	}
 	rows.Close()
 
@@ -437,7 +437,7 @@ func donksforhonks(honks []*ActivityPubActivity) {
 		var o string
 		err = rows.Scan(&hid, &o)
 		if err != nil {
-			elog.Printf("error scanning donk: %s", err)
+			elog.Printf("error scanning attachment: %s", err)
 			continue
 		}
 		h := hmap[hid]
@@ -501,7 +501,7 @@ func donksforhonks(honks []*ActivityPubActivity) {
 	rows.Close()
 }
 
-func donksforchonks(chonks []*Chonk) {
+func attachmentsForChonks(chonks []*Chonk) {
 	db := opendatabase()
 	var ids []string
 	chmap := make(map[int64]*Chonk)
@@ -510,24 +510,24 @@ func donksforchonks(chonks []*Chonk) {
 		chmap[ch.ID] = ch
 	}
 	idset := strings.Join(ids, ",")
-	// grab donks
-	q := fmt.Sprintf("select chonkid, donks.fileid, xid, name, description, url, media, local from donks join filemeta on donks.fileid = filemeta.fileid where chonkid in (%s)", idset)
+	// grab attachments
+	q := fmt.Sprintf("select chonkid, attachments.fileid, xid, name, description, url, media, local from attachments join filemeta on attachments.fileid = filemeta.fileid where chonkid in (%s)", idset)
 	rows, err := db.Query(q)
 	if err != nil {
-		elog.Printf("error querying donks: %s", err)
+		elog.Printf("error querying attachments: %s", err)
 		return
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var chid int64
-		d := new(Donk)
+		d := new(Attachment)
 		err = rows.Scan(&chid, &d.FileID, &d.XID, &d.Name, &d.Desc, &d.URL, &d.Media, &d.Local)
 		if err != nil {
-			elog.Printf("error scanning donk: %s", err)
+			elog.Printf("error scanning attachment: %s", err)
 			continue
 		}
 		ch := chmap[chid]
-		ch.Donks = append(ch.Donks, d)
+		ch.Attachments = append(ch.Attachments, d)
 	}
 }
 
@@ -581,12 +581,12 @@ func savefileandxid(name string, desc string, url string, media string, local bo
 	return fileid, xid, nil
 }
 
-func finddonk(url string) *Donk {
-	donk := new(Donk)
+func findAttachment(url string) *Attachment {
+	attachment := new(Attachment)
 	row := stmtFindFile.QueryRow(url)
-	err := row.Scan(&donk.FileID, &donk.XID)
+	err := row.Scan(&attachment.FileID, &attachment.XID)
 	if err == nil {
-		return donk
+		return attachment
 	}
 	if err != sql.ErrNoRows {
 		elog.Printf("error finding file: %s", err)
@@ -606,10 +606,10 @@ func savechonk(ch *Chonk) error {
 	res, err := tx.Stmt(stmtSaveChonk).Exec(ch.UserID, ch.XID, ch.Who, ch.Target, dt, ch.Noise, ch.Format)
 	if err == nil {
 		ch.ID, _ = res.LastInsertId()
-		for _, d := range ch.Donks {
-			_, err := tx.Stmt(stmtSaveDonk).Exec(-1, ch.ID, d.FileID)
+		for _, d := range ch.Attachments {
+			_, err := tx.Stmt(stmtSaveAttachment).Exec(-1, ch.ID, d.FileID)
 			if err != nil {
-				elog.Printf("error saving donk: %s", err)
+				elog.Printf("error saving attachment: %s", err)
 				break
 			}
 		}
@@ -721,7 +721,7 @@ func loadchatter(userid int64) []*Chatter {
 		chonks[ch.Target] = append(chonks[ch.Target], ch)
 		allchonks = append(allchonks, ch)
 	}
-	donksforchonks(allchonks)
+	attachmentsForChonks(allchonks)
 	rows.Close()
 	rows, err = stmtGetChatters.Query(userid)
 	if err != nil {
@@ -858,10 +858,10 @@ func deleteHonk(honkid int64) error {
 }
 
 func saveextras(tx *sql.Tx, h *ActivityPubActivity) error {
-	for _, d := range h.Donks {
-		_, err := tx.Stmt(stmtSaveDonk).Exec(h.ID, -1, d.FileID)
+	for _, d := range h.Attachments {
+		_, err := tx.Stmt(stmtSaveAttachment).Exec(h.ID, -1, d.FileID)
 		if err != nil {
-			elog.Printf("error saving donk: %s", err)
+			elog.Printf("error saving attachment: %s", err)
 			return err
 		}
 	}
@@ -931,7 +931,7 @@ func addReaction(user *UserProfile, xid string, who, react string) {
 }
 
 func deleteextras(tx *sql.Tx, honkid int64, everything bool) error {
-	_, err := tx.Stmt(stmtDeleteDonks).Exec(honkid)
+	_, err := tx.Stmt(stmtDeleteAttachments).Exec(honkid)
 	if err != nil {
 		return err
 	}
@@ -1033,11 +1033,11 @@ func cleanupdb(arg string) {
 		sqlargs = append(sqlargs, expdate)
 	}
 	sqlMustQuery(db, "delete from honks where flags & 4 = 0 and whofore = 0 and "+where, sqlargs...)
-	sqlMustQuery(db, "delete from donks where honkid > 0 and honkid not in (select honkid from honks)")
+	sqlMustQuery(db, "delete from attachments where honkid > 0 and honkid not in (select honkid from honks)")
 	sqlMustQuery(db, "delete from onts where honkid not in (select honkid from honks)")
 	sqlMustQuery(db, "delete from honkmeta where honkid not in (select honkid from honks)")
 
-	sqlMustQuery(db, "delete from filemeta where fileid not in (select fileid from donks)")
+	sqlMustQuery(db, "delete from filemeta where fileid not in (select fileid from attachments)")
 	for _, u := range allusers() {
 		sqlMustQuery(db, "delete from zonkers where userid = ? and wherefore = 'mute-thread' and zonkerid < (select zonkerid from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 1 offset 200)", u.UserID, u.UserID)
 	}
@@ -1089,11 +1089,11 @@ var stmtAnyXonk, stmtOneActivityPubActivity, stmtPublicHonks, stmtUserHonks, stm
 var stmtHonksByOntology, stmtHonksForUser, stmtHonksForMe, stmtSaveDub, stmtHonksByXonker *sql.Stmt
 var stmtHonksFromLongAgo *sql.Stmt
 var stmtHonksByHonker, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
-var stmtEventHonks, stmtOneShare, stmtFindZonk, stmtFindXonk, stmtSaveDonk *sql.Stmt
+var stmtEventHonks, stmtOneShare, stmtFindZonk, stmtFindXonk, stmtSaveAttachment *sql.Stmt
 var stmtFindFile, stmtGetFileData, stmtSaveFileData, stmtSaveFile *sql.Stmt
 var stmtCheckFileData *sql.Stmt
 var stmtAddResubmission, stmtGetResubmissions, stmtLoadResubmission, stmtDeleteResubmission, stmtOneHonker *sql.Stmt
-var stmtUntagged, stmtDeleteHonk, stmtDeleteDonks, stmtDeleteOnts, stmtSaveZonker *sql.Stmt
+var stmtUntagged, stmtDeleteHonk, stmtDeleteAttachments, stmtDeleteOnts, stmtSaveZonker *sql.Stmt
 var stmtGetZonkers, stmtRecentHonkers, stmtGetXonker, stmtSaveXonker, stmtDeleteXonker, stmtDeleteOldXonkers *sql.Stmt
 var stmtAllOnts, stmtSaveOnt, stmtUpdateFlags, stmtClearFlags *sql.Stmt
 var stmtHonksForUserFirstClass *sql.Stmt
@@ -1152,8 +1152,8 @@ func prepareStatements(db *sql.DB) {
 	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, noise = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
 	stmtSaveOnt = sqlMustPrepare(db, "insert into onts (ontology, honkid) values (?, ?)")
 	stmtDeleteOnts = sqlMustPrepare(db, "delete from onts where honkid = ?")
-	stmtSaveDonk = sqlMustPrepare(db, "insert into donks (honkid, chonkid, fileid) values (?, ?, ?)")
-	stmtDeleteDonks = sqlMustPrepare(db, "delete from donks where honkid = ?")
+	stmtSaveAttachment = sqlMustPrepare(db, "insert into attachments (honkid, chonkid, fileid) values (?, ?, ?)")
+	stmtDeleteAttachments = sqlMustPrepare(db, "delete from attachments where honkid = ?")
 	stmtSaveFile = sqlMustPrepare(db, "insert into filemeta (xid, name, description, url, media, local) values (?, ?, ?, ?, ?, ?)")
 	blobdb := openblobdb()
 	stmtSaveFileData = sqlMustPrepare(blobdb, "insert into filedata (xid, media, hash, content) values (?, ?, ?, ?)")

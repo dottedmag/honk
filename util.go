@@ -150,11 +150,11 @@ func deluser(username string) {
 	db := opendatabase()
 
 	where := " where honkid in (select honkid from honks where userid = ?)"
-	sqlMustQuery(db, "delete from donks"+where, userid)
+	sqlMustQuery(db, "delete from attachments"+where, userid)
 	sqlMustQuery(db, "delete from onts"+where, userid)
 	sqlMustQuery(db, "delete from honkmeta"+where, userid)
 	where = " where chonkid in (select chonkid from chonks where userid = ?)"
-	sqlMustQuery(db, "delete from donks"+where, userid)
+	sqlMustQuery(db, "delete from attachments"+where, userid)
 
 	sqlMustQuery(db, "delete from honks where userid = ?", userid)
 	sqlMustQuery(db, "delete from chonks where userid = ?", userid)

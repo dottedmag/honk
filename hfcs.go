@@ -323,7 +323,7 @@ func matchfilterX(h *ActivityPubActivity, f *Filter) string {
 			m = re.FindString(h.Noise)
 		}
 		if m == "" {
-			for _, d := range h.Donks {
+			for _, d := range h.Attachments {
 				m = re.FindString(d.Desc)
 				if m != "" {
 					break

@@ -72,39 +72,39 @@ const serverUID int64 = -2
 
 // ActivityPubActivity used to be a Xonk
 type ActivityPubActivity struct {
-	ID        int64
-	UserID    int64
-	Username  string
-	What      string
-	Honker    string
-	Handle    string
-	Handles   string
-	Oonker    string
-	Oondle    string
-	XID       string
-	RID       string
-	Date      time.Time
-	URL       string
-	Noise     string
-	Precis    string
-	Format    string
-	Thread    string
-	Audience  []string
-	Public    bool
-	Whofore   int64
-	Replies   []*ActivityPubActivity
-	Flags     int64
-	HTPrecis  template.HTML
-	HTML      template.HTML
-	Style     string
-	Open      string
-	Donks     []*Donk
-	Onts      []string
-	Place     *Place
-	Time      *Time
-	Mentions  []Mention
-	Reactions []Reaction
-	Guesses   template.HTML
+	ID          int64
+	UserID      int64
+	Username    string
+	What        string
+	Honker      string
+	Handle      string
+	Handles     string
+	Oonker      string
+	Oondle      string
+	XID         string
+	RID         string
+	Date        time.Time
+	URL         string
+	Noise       string
+	Precis      string
+	Format      string
+	Thread      string
+	Audience    []string
+	Public      bool
+	Whofore     int64
+	Replies     []*ActivityPubActivity
+	Flags       int64
+	HTPrecis    template.HTML
+	HTML        template.HTML
+	Style       string
+	Open        string
+	Attachments []*Attachment
+	Onts        []string
+	Place       *Place
+	Time        *Time
+	Mentions    []Mention
+	Reactions   []Reaction
+	Guesses     template.HTML
 }
 
 type Reaction struct {
@@ -113,17 +113,17 @@ type Reaction struct {
 }
 
 type Chonk struct {
-	ID     int64
-	UserID int64
-	XID    string
-	Who    string
-	Target string
-	Date   time.Time
-	Noise  string
-	Format string
-	Donks  []*Donk
-	Handle string
-	HTML   template.HTML
+	ID          int64
+	UserID      int64
+	XID         string
+	Who         string
+	Target      string
+	Date        time.Time
+	Noise       string
+	Format      string
+	Attachments []*Attachment
+	Handle      string
+	HTML        template.HTML
 }
 
 type Chatter struct {
@@ -178,7 +178,7 @@ func (honk *ActivityPubActivity) IsReacted() bool {
 	return honk.Flags&flagIsReacted != 0
 }
 
-type Donk struct {
+type Attachment struct {
 	FileID   int64
 	XID      string
 	Name     string

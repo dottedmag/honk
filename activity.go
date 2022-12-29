@@ -244,14 +244,14 @@ func fetchsome(url string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func savedonk(url string, name, desc, media string, localize bool) *Donk {
+func saveAttachment(url string, name, desc, media string, localize bool) *Attachment {
 	if url == "" {
 		return nil
 	}
-	if donk := finddonk(url); donk != nil {
-		return donk
+	if attachment := findAttachment(url); attachment != nil {
+		return attachment
 	}
-	ilog.Printf("saving donk: %s", url)
+	ilog.Printf("saving attachment: %s", url)
 	data := []byte{}
 	if localize {
 		fn := func() (interface{}, error) {
@@ -259,7 +259,7 @@ func savedonk(url string, name, desc, media string, localize bool) *Donk {
 		}
 		ii, err := flightdeck.Call(url, fn)
 		if err != nil {
-			ilog.Printf("error fetching donk: %s", err)
+			ilog.Printf("error fetching attachment: %s", err)
 			localize = false
 			goto saveit
 		}
@@ -296,9 +296,9 @@ saveit:
 		elog.Printf("error saving file %s: %s", url, err)
 		return nil
 	}
-	donk := new(Donk)
-	donk.FileID = fileid
-	return donk
+	attachment := new(Attachment)
+	attachment.FileID = fileid
+	return attachment
 }
 
 func iszonked(userid int64, xid string) bool {
@@ -846,9 +846,9 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 				if skipMedia(&xonk) {
 					localize = false
 				}
-				donk := savedonk(u, name, desc, mt, localize)
-				if donk != nil {
-					xonk.Donks = append(xonk.Donks, donk)
+				attachment := saveAttachment(u, name, desc, mt, localize)
+				if attachment != nil {
+					xonk.Attachments = append(xonk.Attachments, attachment)
 				}
 				numatts++
 			}
@@ -884,9 +884,9 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 						mt = "image/png"
 					}
 					u, _ := icon.GetString("url")
-					donk := savedonk(u, name, desc, mt, true)
-					if donk != nil {
-						xonk.Donks = append(xonk.Donks, donk)
+					attachment := saveAttachment(u, name, desc, mt, true)
+					if attachment != nil {
+						xonk.Attachments = append(xonk.Attachments, attachment)
 					}
 				}
 				if tt == "Hashtag" {
@@ -981,14 +981,14 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 
 		if what == "chonk" {
 			ch := Chonk{
-				UserID: xonk.UserID,
-				XID:    xid,
-				Who:    xonk.Honker,
-				Target: xonk.Honker,
-				Date:   xonk.Date,
-				Noise:  xonk.Noise,
-				Format: xonk.Format,
-				Donks:  xonk.Donks,
+				UserID:      xonk.UserID,
+				XID:         xid,
+				Who:         xonk.Honker,
+				Target:      xonk.Honker,
+				Date:        xonk.Date,
+				Noise:       xonk.Noise,
+				Format:      xonk.Format,
+				Attachments: xonk.Attachments,
 			}
 			savechonk(&ch)
 			return nil
@@ -1106,9 +1106,9 @@ func subsub(user *UserProfile, xid string, owner string, folxid string) {
 	deliverate(0, user.ID, owner, j.ToBytes(), true)
 }
 
-func activatedonks(donks []*Donk) []junk.Junk {
+func activateAttachments(attachments []*Attachment) []junk.Junk {
 	var atts []junk.Junk
-	for _, d := range donks {
+	for _, d := range attachments {
 		if re_emus.MatchString(d.Name) {
 			continue
 		}
@@ -1256,7 +1256,7 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 				jo["duration"] = "PT" + strings.ToUpper(t.Duration.String())
 			}
 		}
-		atts := activatedonks(h.Donks)
+		atts := activateAttachments(h.Attachments)
 		if len(atts) > 0 {
 			jo["attachment"] = atts
 		}
@@ -1326,7 +1326,7 @@ var oldjonks = cache.New(cache.Options{Filler: func(xid string) ([]byte, bool) {
 			honk.Replies = append(honk.Replies, h)
 		}
 	}
-	donksforhonks([]*ActivityPubActivity{honk})
+	attachmentsForHonks([]*ActivityPubActivity{honk})
 	_, j := jonkjonk(user, honk)
 	j["@context"] = atContextString
 
@@ -1371,7 +1371,7 @@ func chonkifymsg(user *UserProfile, ch *Chonk) []byte {
 	jo["attributedTo"] = user.URL
 	jo["to"] = aud
 	jo["content"] = ch.HTML
-	atts := activatedonks(ch.Donks)
+	atts := activateAttachments(ch.Attachments)
 	if len(atts) > 0 {
 		jo["attachment"] = atts
 	}

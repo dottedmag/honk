@@ -10,10 +10,10 @@
 <p><label for=noise>noise:</label><br>
 <textarea name="noise" id="noise"></textarea>
 <p><button name="chonk" value="chonk">chonk</button>
-<label class=button id="donker">attach: <input onchange="updatedonker(this);" type="file" name="donk"><span></span></label>
+<label class=button id="attachment">attach: <input onchange="updateAttachment(this);" type="file" name="attachment"><span></span></label>
 </form>
 <script>
-function updatedonker(el) {
+function updateAttachment(el) {
 	el = el.parentElement
 	el.children[1].textContent = el.children[0].value.slice(-20)
 }
@@ -30,7 +30,7 @@ chatter: {{ .Target }}
 <p>
 <span class="chatstamp">{{ .Date.Local.Format "15:04" }} {{ .Handle }}:</span>
 {{ .HTML }}
-{{ range .Donks }}
+{{ range .Attachments }}
 {{ if .Local }}
 {{ if eq .Media "text/plain" }}
 <p><a href="/d/{{ .XID }}">Attachment: {{ .Name }}</a>{{ if not (eq .Desc .Name) }} {{ .Desc }}{{ end }}
@@ -59,7 +59,7 @@ chatter: {{ .Target }}
 <p><label for=noise>noise:</label><br>
 <textarea name="noise" id="noise"></textarea>
 <p><button name="chonk" value="chonk">chonk</button>
-<label class=button id="donker">attach: <input onchange="updatedonker(this);" type="file" name="donk"><span></span></label>
+<label class=button id="attachment">attach: <input onchange="updateAttachment(this);" type="file" name="attachment"><span></span></label>
 </form>
 </section>
 {{ end }}

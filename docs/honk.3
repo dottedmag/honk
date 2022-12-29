@@ -76,11 +76,11 @@ The contents of the honk.
 The format of noise.
 Defaults to markdown.
 May also be html.
-.It Fa donk
+.It Fa attachment
 A file to attach.
-.It Fa donkdesc
+.It Fa attachmentDesc
 A description for the attached file.
-.It Fa donkxid
+.It Fa attachmentXid
 The XID of a previously uploaded attachment.
 .It Fa placename
 The name of an associated location.
@@ -97,11 +97,11 @@ The ActivityPub ID that this honk is in reply to.
 .El
 .Pp
 Upon success, the honk action will return the URL for the created honk.
-.Ss donk
+.Ss attachment
 Upload just an attachment using
-.Fa donk
+.Fa attachment
 and
-.Fa donkdesc .
+.Fa attachmentDesc .
 Content type must be multipart/form-data.
 Will return the XID.
 .Ss gethonks

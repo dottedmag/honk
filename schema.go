@@ -63,13 +63,13 @@ create table chonks (
   format text
 );
 
-create table donks (
+create table attachments (
   honkid integer,
   chonkid integer,
   fileid integer
 );
-create index idx_donkshonk on donks(honkid);
-create index idx_donkschonk on donks(chonkid);
+create index idx_attachmentShonk on attachments(honkid);
+create index idx_attachmentSchonk on attachments(chonkid);
 
 create table filemeta (
   fileid integer primary key,

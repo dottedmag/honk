@@ -283,7 +283,7 @@ function relinklinks() {
 	history.replaceState(curpagestate, "some title", "")
 })();
 (function() {
-	hideelement("donkdescriptor")
+	hideelement("attachmentDescriptor")
 })();
 function showhonkform(elem, rid, hname) {
 	var form = lehonkform
@@ -329,12 +329,12 @@ function hideelement(el) {
 	if (!el) return
 	el.style.display = "none"
 }
-function updatedonker() {
-	var el = document.getElementById("donker")
+function updateAttachment() {
+	var el = document.getElementById("attachment")
 	el.children[1].textContent = el.children[0].value.slice(-20)
-	var el = document.getElementById("donkdescriptor")
+	var el = document.getElementById("attachmentDescriptor")
 	el.style.display = ""
-	var el = document.getElementById("saveddonkxid")
+	var el = document.getElementById("saveAttachmentXid")
 	el.value = ""
 }
 var checkinprec = 100.0

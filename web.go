@@ -196,7 +196,7 @@ func showrss(w http.ResponseWriter, r *http.Request) {
 			desc += string(templates.Sprintf(`<p>Location: <a href="%s">%s</a> %f %f`,
 				p.Url, p.Name, p.Latitude, p.Longitude))
 		}
-		for _, d := range honk.Donks {
+		for _, d := range honk.Attachments {
 			desc += string(templates.Sprintf(`<p><a href="%s">Attachment: %s</a>`,
 				d.URL, d.Desc))
 			if strings.HasPrefix(d.Media, "image") {
@@ -1037,7 +1037,7 @@ func showonehonk(w http.ResponseWriter, r *http.Request) {
 
 		}
 		honks := []*ActivityPubActivity{honk}
-		donksforhonks(honks)
+		attachmentsForHonks(honks)
 		templinfo := getInfo(r)
 		templinfo["ServerMessage"] = "one honk maybe more"
 		templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
@@ -1187,7 +1187,7 @@ func doShare(xid string, user *UserProfile) {
 	if xonk.IsShared() {
 		return
 	}
-	donksforhonks([]*ActivityPubActivity{xonk})
+	attachmentsForHonks([]*ActivityPubActivity{xonk})
 
 	_, err := stmtUpdateFlags.Exec(flagIsShared, xonk.ID)
 	if err != nil {
@@ -1200,26 +1200,26 @@ func doShare(xid string, user *UserProfile) {
 	}
 	dt := time.Now().UTC()
 	share := &ActivityPubActivity{
-		UserID:   user.ID,
-		Username: user.Name,
-		What:     "share",
-		Honker:   user.URL,
-		Oonker:   oonker,
-		XID:      xonk.XID,
-		RID:      xonk.RID,
-		Noise:    xonk.Noise,
-		Precis:   xonk.Precis,
-		URL:      xonk.URL,
-		Date:     dt,
-		Donks:    xonk.Donks,
-		Whofore:  2,
-		Thread:   xonk.Thread,
-		Audience: []string{activitystreamsPublicString, oonker},
-		Public:   true,
-		Format:   xonk.Format,
-		Place:    xonk.Place,
-		Onts:     xonk.Onts,
-		Time:     xonk.Time,
+		UserID:      user.ID,
+		Username:    user.Name,
+		What:        "share",
+		Honker:      user.URL,
+		Oonker:      oonker,
+		XID:         xonk.XID,
+		RID:         xonk.RID,
+		Noise:       xonk.Noise,
+		Precis:      xonk.Precis,
+		URL:         xonk.URL,
+		Date:        dt,
+		Attachments: xonk.Attachments,
+		Whofore:     2,
+		Thread:      xonk.Thread,
+		Audience:    []string{activitystreamsPublicString, oonker},
+		Public:      true,
+		Format:      xonk.Format,
+		Place:       xonk.Place,
+		Onts:        xonk.Onts,
+		Time:        xonk.Time,
 	}
 
 	err = savehonk(share)
@@ -1401,7 +1401,7 @@ func edithonkpage(w http.ResponseWriter, r *http.Request) {
 	noise := honk.Noise
 
 	honks := []*ActivityPubActivity{honk}
-	donksforhonks(honks)
+	attachmentsForHonks(honks)
 	reverbolate(u.UserID, honks)
 	templinfo := getInfo(r)
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
@@ -1419,8 +1419,8 @@ func edithonkpage(w http.ResponseWriter, r *http.Request) {
 	templinfo["ServerMessage"] = "honk edit 2"
 	templinfo["IsPreview"] = true
 	templinfo["UpdateXID"] = honk.XID
-	if len(honk.Donks) > 0 {
-		templinfo["SavedFile"] = honk.Donks[0].XID
+	if len(honk.Attachments) > 0 {
+		templinfo["SavedFile"] = honk.Attachments[0].XID
 	}
 	err := readviews.Execute(w, "honkpage.html", templinfo)
 	if err != nil {
@@ -1460,17 +1460,17 @@ func canedithonk(user *UserProfile, honk *ActivityPubActivity) bool {
 	return true
 }
 
-func submitdonk(w http.ResponseWriter, r *http.Request) (*Donk, error) {
+func submitAttachment(w http.ResponseWriter, r *http.Request) (*Attachment, error) {
 	if !strings.HasPrefix(strings.ToLower(r.Header.Get("Content-Type")), "multipart/form-data") {
 		return nil, nil
 	}
-	file, filehdr, err := r.FormFile("donk")
+	file, filehdr, err := r.FormFile("attachment")
 	if err != nil {
 		if err == http.ErrMissingFile {
 			return nil, nil
 		}
-		elog.Printf("error reading donk: %s", err)
-		http.Error(w, "error reading donk", http.StatusUnsupportedMediaType)
+		elog.Printf("error reading attachment: %s", err)
+		http.Error(w, "error reading attachment", http.StatusUnsupportedMediaType)
 		return nil, err
 	}
 	var buf bytes.Buffer
@@ -1535,7 +1535,7 @@ func submitdonk(w http.ResponseWriter, r *http.Request) (*Donk, error) {
 			}
 		}
 	}
-	desc := strings.TrimSpace(r.FormValue("donkdesc"))
+	desc := strings.TrimSpace(r.FormValue("attachmentDesc"))
 	if desc == "" {
 		desc = name
 	}
@@ -1545,7 +1545,7 @@ func submitdonk(w http.ResponseWriter, r *http.Request) (*Donk, error) {
 		http.Error(w, "failed to save attachment", http.StatusUnsupportedMediaType)
 		return nil, err
 	}
-	d := &Donk{
+	d := &Attachment{
 		FileID: fileid,
 		XID:    xid,
 		Desc:   desc,
@@ -1659,22 +1659,22 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	honk.Public = loudandproud(honk.Audience)
 	honk.Thread = thread
 
-	donkxid := r.FormValue("donkxid")
-	if donkxid == "" {
-		d, err := submitdonk(w, r)
+	attachmentXid := r.FormValue("attachmentXid")
+	if attachmentXid == "" {
+		d, err := submitAttachment(w, r)
 		if err != nil && err != http.ErrMissingFile {
 			return nil
 		}
 		if d != nil {
-			honk.Donks = append(honk.Donks, d)
-			donkxid = d.XID
+			honk.Attachments = append(honk.Attachments, d)
+			attachmentXid = d.XID
 		}
 	} else {
-		xid := donkxid
+		xid := attachmentXid
 		url := fmt.Sprintf("https://%s/d/%s", serverName, xid)
-		donk := finddonk(url)
-		if donk != nil {
-			honk.Donks = append(honk.Donks, donk)
+		attachment := findAttachment(url)
+		if attachment != nil {
+			honk.Attachments = append(honk.Attachments, attachment)
 		} else {
 			ilog.Printf("can't find file: %s", xid)
 		}
@@ -1737,7 +1737,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		templinfo["MapLink"] = getmaplink(userinfo)
 		templinfo["InReplyTo"] = r.FormValue("rid")
 		templinfo["Noise"] = r.FormValue("noise")
-		templinfo["SavedFile"] = donkxid
+		templinfo["SavedFile"] = attachmentXid
 		if tm := honk.Time; tm != nil {
 			templinfo["ShowTime"] = ";"
 			templinfo["StartTime"] = tm.StartTime.Format("2006-01-02 15:04")
@@ -1767,8 +1767,8 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	}
 
 	// reload for consistency
-	honk.Donks = nil
-	donksforhonks([]*ActivityPubActivity{honk})
+	honk.Attachments = nil
+	attachmentsForHonks([]*ActivityPubActivity{honk})
 
 	go honkworldwide(user, honk)
 
@@ -1830,19 +1830,19 @@ func submitchonk(w http.ResponseWriter, r *http.Request) {
 		Noise:  noise,
 		Format: format,
 	}
-	d, err := submitdonk(w, r)
+	d, err := submitAttachment(w, r)
 	if err != nil && err != http.ErrMissingFile {
 		return
 	}
 	if d != nil {
-		ch.Donks = append(ch.Donks, d)
+		ch.Attachments = append(ch.Attachments, d)
 	}
 
 	translatechonk(&ch)
 	savechonk(&ch)
 	// reload for consistency
-	ch.Donks = nil
-	donksforchonks([]*Chonk{&ch})
+	ch.Attachments = nil
+	attachmentsForChonks([]*Chonk{&ch})
 	go sendchonk(user, &ch)
 
 	http.Redirect(w, r, "/chatter", http.StatusSeeOther)
@@ -2351,14 +2351,14 @@ func apihandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write([]byte(h.XID))
-	case "donk":
-		d, err := submitdonk(w, r)
+	case "attachment":
+		d, err := submitAttachment(w, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		if d == nil {
-			http.Error(w, "missing donk", http.StatusBadRequest)
+			http.Error(w, "missing attachment", http.StatusBadRequest)
 			return
 		}
 		w.Write([]byte(d.XID))

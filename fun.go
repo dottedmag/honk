@@ -136,7 +136,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 			htf.SpanClasses = allowedclasses
 			htf.BaseURL, _ = url.Parse(h.XID)
 			emuxifier := func(e string) string {
-				for _, d := range h.Donks {
+				for _, d := range h.Attachments {
 					if d.Name == e {
 						zap[d.XID] = true
 						if d.Local {
@@ -164,13 +164,13 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 			h.Noise = string(n)
 		}
 		j := 0
-		for i := 0; i < len(h.Donks); i++ {
-			if !zap[h.Donks[i].XID] {
-				h.Donks[j] = h.Donks[i]
+		for i := 0; i < len(h.Attachments); i++ {
+			if !zap[h.Attachments[i].XID] {
+				h.Attachments[j] = h.Attachments[i]
 				j++
 			}
 		}
-		h.Donks = h.Donks[:j]
+		h.Attachments = h.Attachments[:j]
 	}
 
 	unsee(honks, userid)
@@ -194,7 +194,7 @@ func replaceimgsand(zap map[string]bool, absolute bool) func(node *html.Node) st
 		if htfilter.HasClass(node, "Emoji") && alt != "" {
 			return alt
 		}
-		d := finddonk(src)
+		d := findAttachment(src)
 		if d != nil {
 			zap[d.XID] = true
 			base := ""
@@ -227,7 +227,7 @@ func filterchonk(ch *Chonk) {
 
 	zap := make(map[string]bool)
 	emuxifier := func(e string) string {
-		for _, d := range ch.Donks {
+		for _, d := range ch.Attachments {
 			if d.Name == e {
 				zap[d.XID] = true
 				if d.Local {
@@ -246,13 +246,13 @@ func filterchonk(ch *Chonk) {
 	}
 	noise = re_emus.ReplaceAllStringFunc(noise, emuxifier)
 	j := 0
-	for i := 0; i < len(ch.Donks); i++ {
-		if !zap[ch.Donks[i].XID] {
-			ch.Donks[j] = ch.Donks[i]
+	for i := 0; i < len(ch.Attachments); i++ {
+		if !zap[ch.Attachments[i].XID] {
+			ch.Attachments[j] = ch.Attachments[i]
 			j++
 		}
 	}
-	ch.Donks = ch.Donks[:j]
+	ch.Attachments = ch.Attachments[:j]
 
 	noise = strings.TrimPrefix(noise, "<p>")
 	ch.HTML = template.HTML(noise)
@@ -268,9 +268,9 @@ func inlineimgsfor(honk *ActivityPubActivity) func(node *html.Node) string {
 	return func(node *html.Node) string {
 		src := htfilter.GetAttr(node, "src")
 		alt := htfilter.GetAttr(node, "alt")
-		d := savedonk(src, "image", alt, "image", true)
+		d := saveAttachment(src, "image", alt, "image", true)
 		if d != nil {
-			honk.Donks = append(honk.Donks, d)
+			honk.Attachments = append(honk.Attachments, d)
 		}
 		dlog.Printf("inline img with src: %s", src)
 		return ""
@@ -323,13 +323,13 @@ func redoimages(honk *ActivityPubActivity) {
 		honk.Noise = string(n)
 	}
 	j := 0
-	for i := 0; i < len(honk.Donks); i++ {
-		if !zap[honk.Donks[i].XID] {
-			honk.Donks[j] = honk.Donks[i]
+	for i := 0; i < len(honk.Attachments); i++ {
+		if !zap[honk.Attachments[i].XID] {
+			honk.Attachments[j] = honk.Attachments[i]
 			j++
 		}
 	}
-	honk.Donks = honk.Donks[:j]
+	honk.Attachments = honk.Attachments[:j]
 
 	honk.Noise = re_memes.ReplaceAllString(honk.Noise, "")
 	honk.Noise = strings.Replace(honk.Noise, "<a href=", "<a class=\"mention u-url\" href=", -1)
@@ -438,14 +438,14 @@ func memetize(honk *ActivityPubActivity) {
 			elog.Printf("error saving meme: %s", err)
 			return x
 		}
-		d := &Donk{
+		d := &Attachment{
 			FileID: fileid,
 			Name:   name,
 			Media:  ct,
 			URL:    url,
 			Local:  false,
 		}
-		honk.Donks = append(honk.Donks, d)
+		honk.Attachments = append(honk.Attachments, d)
 		return ""
 	}
 	honk.Noise = re_memes.ReplaceAllStringFunc(honk.Noise, repl)

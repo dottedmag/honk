@@ -170,10 +170,10 @@ func importMastotoots(user *UserProfile, source string) {
 					elog.Printf("error saving media: %s", fname)
 					continue
 				}
-				donk := &Donk{
+				attachment := &Attachment{
 					FileID: fileid,
 				}
-				honk.Donks = append(honk.Donks, donk)
+				honk.Attachments = append(honk.Attachments, attachment)
 			}
 		}
 		for _, t := range toot.Object.Tag {
@@ -449,10 +449,10 @@ func importTwitter(username, source string) {
 				elog.Printf("error saving media: %s", fname)
 				continue
 			}
-			donk := &Donk{
+			attachment := &Attachment{
 				FileID: fileid,
 			}
-			honk.Donks = append(honk.Donks, donk)
+			honk.Attachments = append(honk.Attachments, attachment)
 			noise = strings.Replace(noise, m.URL, "", -1)
 		}
 		for _, ht := range t.Tweet.Entities.Hashtags {

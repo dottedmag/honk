@@ -9,10 +9,10 @@
   <details>
     <summary>more options</summary>
     <p>
-    <label class=button id="donker">attach: <input onchange="updatedonker();" type="file" name="donk"><span>{{ .SavedFile }}</span></label>
-    <input type="hidden" id="saveddonkxid" name="donkxid" value="{{ .SavedFile }}">
-    <p id="donkdescriptor"><label for=donkdesc>description:</label><br>
-    <input type="text" name="donkdesc" value="{{ .DonkDesc }}" autocomplete=off>
+    <label class=button id="attachment">attach: <input onchange="updateAttachment();" type="file" name="attachment"><span>{{ .SavedFile }}</span></label>
+    <input type="hidden" id="savedAttachmentXid" name="attachmentXid" value="{{ .SavedFile }}">
+    <p id="attachmentDescriptor"><label for=attachmentDesc>description:</label><br>
+    <input type="text" name="attachmentDesc" value="{{ .AttachmentDesc }}" autocomplete=off>
     {{ with .SavedPlace }}
       <p><button id=checkinbutton type=button onclick="fillcheckin()">assassination coordinates</button>
       <div id=placedescriptor>

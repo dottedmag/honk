@@ -4,7 +4,6 @@
   * crappola
   * deliverate
   * demoji
-  * donk
   * dub
   * emu
   * endoftheworld
