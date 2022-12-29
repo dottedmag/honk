@@ -76,10 +76,6 @@ func PostJSON(keyname string, key httpsig.PrivateKey, url string, j tj.O) error 
 	return PostMsg(keyname, key, url, must.OK1(json.Marshal(j)))
 }
 
-func PostJunk(keyname string, key httpsig.PrivateKey, url string, j junk.Junk) error {
-	return PostMsg(keyname, key, url, j.ToBytes())
-}
-
 func PostMsg(keyname string, key httpsig.PrivateKey, url string, msg []byte) error {
 	client := http.DefaultClient
 	if develMode {
