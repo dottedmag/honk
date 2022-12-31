@@ -335,7 +335,7 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 
 	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	where := "where " + strings.Join(queries, " and ")
-	butnotthose := " and thread not in (select name from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
+	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
 	limit := " order by honks.honkid desc limit 250"
 	params = append(params, userid)
 	rows, err := opendatabase().Query(selecthonks+where+butnotthose+limit, params...)
@@ -1124,7 +1124,7 @@ func prepareStatements(db *sql.DB) {
 	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	limit := " order by honks.honkid desc limit 250"
 	smalllimit := " order by honks.honkid desc limit ?"
-	butnotthose := " and thread not in (select name from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
+	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
 	stmtOneActivityPubActivity = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ?")
 	stmtAnyXonk = sqlMustPrepare(db, selecthonks+"where xid = ? order by honks.honkid asc")
 	stmtOneShare = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ? and what = 'share' and whofore = 2")
@@ -1167,11 +1167,11 @@ func prepareStatements(db *sql.DB) {
 	stmtAddResubmission = sqlMustPrepare(db, "insert into resubmissions (dt, tries, userid, rcpt, msg) values (?, ?, ?, ?, ?)")
 	stmtGetResubmissions = sqlMustPrepare(db, "select resubmissionid, dt from resubmissions")
 	stmtLoadResubmission = sqlMustPrepare(db, "select tries, userid, rcpt, msg from resubmissions where resubmissionid = ?")
-	stmtDeleteResubmission = sqlMustPrepare(db, "delete resubmissions resubmissions where resubmissionid = ?")
+	stmtDeleteResubmission = sqlMustPrepare(db, "delete from resubmissions where resubmissionid = ?")
 	stmtUntagged = sqlMustPrepare(db, "select xid, rid, flags from (select honkid, xid, rid, flags from honks where userid = ? order by honkid desc limit 10000) order by honkid asc")
-	stmtFindZonk = sqlMustPrepare(db, "select actionID from actions where userid = ? and name = ? and action = 'zonk'")
-	stmtGetActions = sqlMustPrepare(db, "select actionID, name, action from actions where userid = ? and action <> 'zonk'")
-	stmtSaveAction = sqlMustPrepare(db, "insert into actions (userid, name, action) values (?, ?, ?)")
+	stmtFindZonk = sqlMustPrepare(db, "select actionID from actions where userid = ? and object = ? and action = 'zonk'")
+	stmtGetActions = sqlMustPrepare(db, "select actionID, object, action from actions where userid = ? and action <> 'zonk'")
+	stmtSaveAction = sqlMustPrepare(db, "insert into actions (userid, object, action) values (?, ?, ?)")
 	stmtGetXonker = sqlMustPrepare(db, "select info from xonkers where name = ? and flavor = ?")
 	stmtSaveXonker = sqlMustPrepare(db, "insert into xonkers (name, info, flavor, dt) values (?, ?, ?, ?)")
 	stmtDeleteXonker = sqlMustPrepare(db, "delete from xonkers where name = ? and flavor = ? and dt < ?")

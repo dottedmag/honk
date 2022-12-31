@@ -108,10 +108,10 @@ create index idx_xonkername on xonkers(name);
 create table actions (
   actionID integer primary key,
   userid integer,
-  name text,
+  object text,
   action text
 );
-create index idx_actionsName on actions(name);
+create index idx_actionsName on actions(object);
 
 create table resubmissions(
   resubmissionid integer primary key,
