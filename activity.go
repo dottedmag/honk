@@ -358,7 +358,7 @@ func deleteActivityPubActivity(userid int64, xid string) {
 	if xonk != nil {
 		deleteHonk(xonk.ID)
 	}
-	_, err := stmtSaveZonker.Exec(userid, xid, "zonk")
+	_, err := stmtSaveAction.Exec(userid, xid, "zonk")
 	if err != nil {
 		elog.Printf("error eradicating: %s", err)
 	}

@@ -1381,9 +1381,9 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	_, err := stmtSaveZonker.Exec(userinfo.UserID, what, action)
+	_, err := stmtSaveAction.Exec(userinfo.UserID, what, action)
 	if err != nil {
-		elog.Printf("error saving zonker: %s", err)
+		elog.Printf("error saving action: %s", err)
 		return
 	}
 }

@@ -105,13 +105,13 @@ create table xonkers (
 );
 create index idx_xonkername on xonkers(name);
 
-create table zonkers (
-  zonkerid integer primary key,
+create table actions (
+  actionID integer primary key,
   userid integer,
   name text,
   action text
 );
-create index idx_zonkersname on zonkers(name);
+create index idx_actionsName on actions(name);
 
 create table resubmissions(
   resubmissionid integer primary key,
