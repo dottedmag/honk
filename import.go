@@ -149,7 +149,7 @@ func importMastotoots(user *UserProfile, source string) {
 		if honk.RID != "" {
 			honk.What = "tonk"
 		}
-		if !loudandproud(honk.Audience) {
+		if !publicAudience(honk.Audience) {
 			honk.Whofore = 3
 		}
 		for _, att := range toot.Object.Attachment {

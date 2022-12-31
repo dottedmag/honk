@@ -1256,7 +1256,7 @@ func sendzonkofsorts(xonk *ActivityPubActivity, user *UserProfile, what string, 
 		Audience: stringArrayTrimUntilDupe(xonk.Audience),
 		Noise:    aux,
 	}
-	zonk.Public = loudandproud(zonk.Audience)
+	zonk.Public = publicAudience(zonk.Audience)
 
 	dlog.Printf("announcing %sed honk: %s", what, xonk.XID)
 	go honkworldwide(user, zonk)
@@ -1656,7 +1656,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		http.Error(w, "honk to nowhere...", http.StatusNotFound)
 		return nil
 	}
-	honk.Public = loudandproud(honk.Audience)
+	honk.Public = publicAudience(honk.Audience)
 	honk.Thread = thread
 
 	attachmentXid := r.FormValue("attachmentXid")

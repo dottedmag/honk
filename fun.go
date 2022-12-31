@@ -588,7 +588,7 @@ func butnottooloud(aud []string) {
 	}
 }
 
-func loudandproud(aud []string) bool {
+func publicAudience(aud []string) bool {
 	for _, a := range aud {
 		if a == activitystreamsPublicString {
 			return true

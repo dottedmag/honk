@@ -724,7 +724,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		}
 		xonk.Audience = append(xonk.Audience, xonk.Honker)
 		xonk.Audience = stringArrayTrimUntilDupe(xonk.Audience)
-		xonk.Public = loudandproud(xonk.Audience)
+		xonk.Public = publicAudience(xonk.Audience)
 
 		var mentions []Mention
 		if obj != nil {

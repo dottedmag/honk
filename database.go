@@ -389,7 +389,7 @@ func scanhonk(row RowLike) *ActivityPubActivity {
 	}
 	h.Date, _ = time.Parse(dbtimeformat, dt)
 	h.Audience = strings.Split(aud, " ")
-	h.Public = loudandproud(h.Audience)
+	h.Public = publicAudience(h.Audience)
 	return h
 }
 
