@@ -696,7 +696,7 @@ func showuser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if isActivityStreamsMediaType(r.Header.Get("Accept")) {
-		j, ok := asjonker(name)
+		j, ok := userBioAsJSON(name)
 		if ok {
 			w.Header().Set("Content-Type", ldjsonContentType)
 			w.Write(j)
@@ -1165,7 +1165,7 @@ func saveuser(w http.ResponseWriter, r *http.Request) {
 	}
 	usersCacheByName.Clear(u.Username)
 	usersCacheByID.Clear(u.UserID)
-	oldjonkers.Clear(u.Username)
+	userBioAsJSONCache.Clear(u.Username)
 
 	if sendupdate {
 		updateMe(u.Username)

@@ -1558,7 +1558,7 @@ func junkuser(user *UserProfile) junk.Junk {
 	return j
 }
 
-var oldjonkers = cache.New(cache.Options{Filler: func(name string) ([]byte, bool) {
+var userBioAsJSONCache = cache.New(cache.Options{Filler: func(name string) ([]byte, bool) {
 	user, err := getUserBio(name)
 	if err != nil {
 		return nil, false
@@ -1569,9 +1569,9 @@ var oldjonkers = cache.New(cache.Options{Filler: func(name string) ([]byte, bool
 	return buf.Bytes(), true
 }, Duration: 1 * time.Minute})
 
-func asjonker(name string) ([]byte, bool) {
+func userBioAsJSON(name string) ([]byte, bool) {
 	var j []byte
-	ok := oldjonkers.Get(name, &j)
+	ok := userBioAsJSONCache.Get(name, &j)
 	return j, ok
 }
 
