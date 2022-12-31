@@ -1790,7 +1790,7 @@ func ingesthandle(origin string, obj junk.Junk) {
 
 func updateMe(username string) {
 	var user *UserProfile
-	somenamedusers.Get(username, &user)
+	usersCacheByName.Get(username, &user)
 	dt := time.Now().UTC().Format(time.RFC3339)
 	j := junk.New()
 	j["@context"] = atContextString

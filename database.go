@@ -62,7 +62,7 @@ func userfromrow(row *sql.Row) (*UserProfile, error) {
 	return user, nil
 }
 
-var somenamedusers = cache.New(cache.Options{Filler: func(name string) (*UserProfile, bool) {
+var usersCacheByName = cache.New(cache.Options{Filler: func(name string) (*UserProfile, bool) {
 	row := stmtUserByName.QueryRow(name)
 	user, err := userfromrow(row)
 	if err != nil {
@@ -76,7 +76,7 @@ var somenamedusers = cache.New(cache.Options{Filler: func(name string) (*UserPro
 	return user, true
 }})
 
-var somenumberedusers = cache.New(cache.Options{Filler: func(userid int64) (*UserProfile, bool) {
+var usersCacheByID = cache.New(cache.Options{Filler: func(userid int64) (*UserProfile, bool) {
 	row := stmtUserByNumber.QueryRow(userid)
 	user, err := userfromrow(row)
 	if err != nil {
@@ -89,7 +89,7 @@ var somenumberedusers = cache.New(cache.Options{Filler: func(userid int64) (*Use
 
 func getserveruser() *UserProfile {
 	var user *UserProfile
-	ok := somenumberedusers.Get(serverUID, &user)
+	ok := usersCacheByID.Get(serverUID, &user)
 	if !ok {
 		elog.Panicf("lost server user")
 	}
@@ -98,7 +98,7 @@ func getserveruser() *UserProfile {
 
 func getUserBio(name string) (*UserProfile, error) {
 	var user *UserProfile
-	ok := somenamedusers.Get(name, &user)
+	ok := usersCacheByName.Get(name, &user)
 	if !ok {
 		return nil, fmt.Errorf("no user: %s", name)
 	}
@@ -623,7 +623,7 @@ func saveChatMessage(ch *ChatMessage) error {
 
 func chatplusone(tx *sql.Tx, userid int64) {
 	var user *UserProfile
-	ok := somenumberedusers.Get(userid, &user)
+	ok := usersCacheByID.Get(userid, &user)
 	if !ok {
 		return
 	}
@@ -636,13 +636,13 @@ func chatplusone(tx *sql.Tx, userid int64) {
 	if err != nil {
 		elog.Printf("error plussing chat: %s", err)
 	}
-	somenamedusers.Clear(user.Name)
-	somenumberedusers.Clear(user.ID)
+	usersCacheByName.Clear(user.Name)
+	usersCacheByID.Clear(user.ID)
 }
 
 func chatnewnone(userid int64) {
 	var user *UserProfile
-	ok := somenumberedusers.Get(userid, &user)
+	ok := usersCacheByID.Get(userid, &user)
 	if !ok || user.Options.ChatCount == 0 {
 		return
 	}
@@ -656,13 +656,13 @@ func chatnewnone(userid int64) {
 	if err != nil {
 		elog.Printf("error noneing chat: %s", err)
 	}
-	somenamedusers.Clear(user.Name)
-	somenumberedusers.Clear(user.ID)
+	usersCacheByName.Clear(user.Name)
+	usersCacheByID.Clear(user.ID)
 }
 
 func meplusone(tx *sql.Tx, userid int64) {
 	var user *UserProfile
-	ok := somenumberedusers.Get(userid, &user)
+	ok := usersCacheByID.Get(userid, &user)
 	if !ok {
 		return
 	}
@@ -675,13 +675,13 @@ func meplusone(tx *sql.Tx, userid int64) {
 	if err != nil {
 		elog.Printf("error plussing me: %s", err)
 	}
-	somenamedusers.Clear(user.Name)
-	somenumberedusers.Clear(user.ID)
+	usersCacheByName.Clear(user.Name)
+	usersCacheByID.Clear(user.ID)
 }
 
 func menewnone(userid int64) {
 	var user *UserProfile
-	ok := somenumberedusers.Get(userid, &user)
+	ok := usersCacheByID.Get(userid, &user)
 	if !ok || user.Options.MeCount == 0 {
 		return
 	}
@@ -695,8 +695,8 @@ func menewnone(userid int64) {
 	if err != nil {
 		elog.Printf("error noneing me: %s", err)
 	}
-	somenamedusers.Clear(user.Name)
-	somenumberedusers.Clear(user.ID)
+	usersCacheByName.Clear(user.Name)
+	usersCacheByID.Clear(user.ID)
 }
 
 func loadChat(userid int64) []*Chat {

@@ -1163,8 +1163,8 @@ func saveuser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		elog.Printf("error bouting what: %s", err)
 	}
-	somenamedusers.Clear(u.Username)
-	somenumberedusers.Clear(u.UserID)
+	usersCacheByName.Clear(u.Username)
+	usersCacheByID.Clear(u.UserID)
 	oldjonkers.Clear(u.Username)
 
 	if sendupdate {
