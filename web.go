@@ -1138,18 +1138,18 @@ func saveuser(w http.ResponseWriter, r *http.Request) {
 		options.Avatar = ava
 		sendupdate = true
 	}
-	ban := re_banner.FindString(userBio)
-	if ban != "" {
+	banner := re_banner.FindString(userBio)
+	if banner != "" {
 		userBio = re_banner.ReplaceAllString(userBio, "")
-		ban = ban[7:]
-		if ban[0] == ' ' {
-			ban = ban[1:]
+		banner = banner[7:]
+		if banner[0] == ' ' {
+			banner = banner[1:]
 		}
-		ban = fmt.Sprintf("https://%s/meme/%s", serverName, ban)
+		banner = fmt.Sprintf("https://%s/meme/%s", serverName, banner)
 		log.Printf("UserBio Banner: %v", ava)
 	}
-	if ban != options.Banner {
-		options.Banner = ban
+	if banner != options.Banner {
+		options.Banner = banner
 		sendupdate = true
 	}
 	userBio = strings.TrimSpace(userBio)
