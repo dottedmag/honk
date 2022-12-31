@@ -1263,12 +1263,12 @@ func sendzonkofsorts(xonk *ActivityPubActivity, user *UserProfile, what string, 
 }
 
 func zonkit(w http.ResponseWriter, r *http.Request) {
-	wherefore := r.FormValue("wherefore")
+	action := r.FormValue("action")
 	what := r.FormValue("what")
 	userinfo := login.GetUserInfo(r)
 	user, _ := getUserBio(userinfo.Username)
 
-	if wherefore == "save" {
+	if action == "save" {
 		xonk := getActivityPubActivity(userinfo.UserID, what)
 		if xonk != nil {
 			_, err := stmtUpdateFlags.Exec(flagIsSaved, xonk.ID)
@@ -1279,7 +1279,7 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "unsave" {
+	if action == "unsave" {
 		xonk := getActivityPubActivity(userinfo.UserID, what)
 		if xonk != nil {
 			_, err := stmtClearFlags.Exec(flagIsSaved, xonk.ID)
@@ -1290,7 +1290,7 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "react" {
+	if action == "react" {
 		reaction := user.Options.Reaction
 		if r2 := r.FormValue("reaction"); r2 != "" {
 			reaction = r2
@@ -1312,7 +1312,7 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 	// my hammer is too big, oh well
 	defer oldjonks.Flush()
 
-	if wherefore == "ack" {
+	if action == "ack" {
 		xonk := getActivityPubActivity(userinfo.UserID, what)
 		if xonk != nil && !xonk.IsAcked() {
 			_, err := stmtUpdateFlags.Exec(flagIsAcked, xonk.ID)
@@ -1324,7 +1324,7 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "deack" {
+	if action == "deack" {
 		xonk := getActivityPubActivity(userinfo.UserID, what)
 		if xonk != nil && xonk.IsAcked() {
 			_, err := stmtClearFlags.Exec(flagIsAcked, xonk.ID)
@@ -1336,13 +1336,13 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "share" {
+	if action == "share" {
 		user, _ := getUserBio(userinfo.Username)
 		doShare(what, user)
 		return
 	}
 
-	if wherefore == "unshare" {
+	if action == "unshare" {
 		xonk := getShare(userinfo.UserID, what)
 		if xonk != nil {
 			deleteHonk(xonk.ID)
@@ -1356,7 +1356,7 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if wherefore == "untag" {
+	if action == "untag" {
 		xonk := getActivityPubActivity(userinfo.UserID, what)
 		if xonk != nil {
 			_, err := stmtUpdateFlags.Exec(flagIsUntagged, xonk.ID)
@@ -1371,8 +1371,8 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ilog.Printf("zonking %s %s", wherefore, what)
-	if wherefore == "zonk" {
+	ilog.Printf("zonking %s %s", action, what)
+	if action == "zonk" {
 		xonk := getActivityPubActivity(userinfo.UserID, what)
 		if xonk != nil {
 			deleteHonk(xonk.ID)
@@ -1381,7 +1381,7 @@ func zonkit(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	_, err := stmtSaveZonker.Exec(userinfo.UserID, what, wherefore)
+	_, err := stmtSaveZonker.Exec(userinfo.UserID, what, action)
 	if err != nil {
 		elog.Printf("error saving zonker: %s", err)
 		return

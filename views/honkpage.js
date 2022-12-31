@@ -33,12 +33,12 @@ function share(el, xid) {
 function unshare(el, xid) {
 	el.innerHTML = "unshared"
 	el.disabled = true
-	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "unshare", "what": xid}))
+	post("/zonkit", encode({"CSRF": csrftoken, "action": "unshare", "what": xid}))
 }
 function muteit(el, thread) {
 	el.innerHTML = "muted"
 	el.disabled = true
-	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "mute-thread", "what": thread}))
+	post("/zonkit", encode({"CSRF": csrftoken, "action": "mute-thread", "what": thread}))
 	var els = document.querySelectorAll('article.honk')
 	for (var i = 0; i < els.length; i++) {
 		var e = els[i]
@@ -50,7 +50,7 @@ function muteit(el, thread) {
 function zonkit(el, xid) {
 	el.innerHTML = "zonked"
 	el.disabled = true
-	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": "zonk", "what": xid}))
+	post("/zonkit", encode({"CSRF": csrftoken, "action": "zonk", "what": xid}))
 	var p = el
 	while (p && p.tagName != "ARTICLE") {
 		p = p.parentElement
@@ -66,7 +66,7 @@ function flogit(el, how, xid) {
 	if (s == "untaged") s = "untagged"
 	el.innerHTML = s
 	el.disabled = true
-	post("/zonkit", encode({"CSRF": csrftoken, "wherefore": how, "what": xid}))
+	post("/zonkit", encode({"CSRF": csrftoken, "action": how, "what": xid}))
 }
 
 var lehonkform = document.getElementById("honkform")

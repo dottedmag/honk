@@ -335,7 +335,7 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 
 	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	where := "where " + strings.Join(queries, " and ")
-	butnotthose := " and thread not in (select name from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 100)"
+	butnotthose := " and thread not in (select name from zonkers where userid = ? and action = 'mute-thread' order by zonkerid desc limit 100)"
 	limit := " order by honks.honkid desc limit 250"
 	params = append(params, userid)
 	rows, err := opendatabase().Query(selecthonks+where+butnotthose+limit, params...)
@@ -1039,7 +1039,7 @@ func cleanupdb(arg string) {
 
 	sqlMustQuery(db, "delete from filemeta where fileid not in (select fileid from attachments)")
 	for _, u := range allusers() {
-		sqlMustQuery(db, "delete from zonkers where userid = ? and wherefore = 'mute-thread' and zonkerid < (select zonkerid from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 1 offset 200)", u.UserID, u.UserID)
+		sqlMustQuery(db, "delete from zonkers where userid = ? and action = 'mute-thread' and zonkerid < (select zonkerid from zonkers where userid = ? and action = 'mute-thread' order by zonkerid desc limit 1 offset 200)", u.UserID, u.UserID)
 	}
 
 	filexids := make(map[string]bool)
@@ -1124,7 +1124,7 @@ func prepareStatements(db *sql.DB) {
 	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	limit := " order by honks.honkid desc limit 250"
 	smalllimit := " order by honks.honkid desc limit ?"
-	butnotthose := " and thread not in (select name from zonkers where userid = ? and wherefore = 'mute-thread' order by zonkerid desc limit 100)"
+	butnotthose := " and thread not in (select name from zonkers where userid = ? and action = 'mute-thread' order by zonkerid desc limit 100)"
 	stmtOneActivityPubActivity = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ?")
 	stmtAnyXonk = sqlMustPrepare(db, selecthonks+"where xid = ? order by honks.honkid asc")
 	stmtOneShare = sqlMustPrepare(db, selecthonks+"where honks.userid = ? and xid = ? and what = 'share' and whofore = 2")
@@ -1169,9 +1169,9 @@ func prepareStatements(db *sql.DB) {
 	stmtLoadResubmission = sqlMustPrepare(db, "select tries, userid, rcpt, msg from resubmissions where resubmissionid = ?")
 	stmtDeleteResubmission = sqlMustPrepare(db, "delete resubmissions resubmissions where resubmissionid = ?")
 	stmtUntagged = sqlMustPrepare(db, "select xid, rid, flags from (select honkid, xid, rid, flags from honks where userid = ? order by honkid desc limit 10000) order by honkid asc")
-	stmtFindZonk = sqlMustPrepare(db, "select zonkerid from zonkers where userid = ? and name = ? and wherefore = 'zonk'")
-	stmtGetZonkers = sqlMustPrepare(db, "select zonkerid, name, wherefore from zonkers where userid = ? and wherefore <> 'zonk'")
-	stmtSaveZonker = sqlMustPrepare(db, "insert into zonkers (userid, name, wherefore) values (?, ?, ?)")
+	stmtFindZonk = sqlMustPrepare(db, "select zonkerid from zonkers where userid = ? and name = ? and action = 'zonk'")
+	stmtGetZonkers = sqlMustPrepare(db, "select zonkerid, name, action from zonkers where userid = ? and action <> 'zonk'")
+	stmtSaveZonker = sqlMustPrepare(db, "insert into zonkers (userid, name, action) values (?, ?, ?)")
 	stmtGetXonker = sqlMustPrepare(db, "select info from xonkers where name = ? and flavor = ?")
 	stmtSaveXonker = sqlMustPrepare(db, "insert into xonkers (name, info, flavor, dt) values (?, ?, ?, ?)")
 	stmtDeleteXonker = sqlMustPrepare(db, "delete from xonkers where name = ? and flavor = ? and dt < ?")

@@ -109,7 +109,7 @@ create table zonkers (
   zonkerid integer primary key,
   userid integer,
   name text,
-  wherefore text
+  action text
 );
 create index idx_zonkersname on zonkers(name);
 

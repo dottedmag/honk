@@ -62,7 +62,7 @@ func share(server, token string, honk Honk) {
 	log.Printf("sharing %s from %s", honk.XID, honk.Honker)
 	form := make(url.Values)
 	form.Add("action", "zonkit")
-	form.Add("wherefore", "share")
+	form.Add("action", "share")
 	form.Add("what", honk.XID)
 	apiurl := fmt.Sprintf("https://%s/api", server)
 	req, err := http.NewRequest("POST", apiurl, strings.NewReader(form.Encode()))
