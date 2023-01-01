@@ -168,10 +168,8 @@ func Vacuum(reader io.Reader, params Params) (*Image, error) {
 			goto zoop
 		case "png":
 			png.Encode(&buf, img)
-		case "webp":
+		case "webp", "jpeg":
 			format = "jpeg"
-			fallthrough
-		case "jpeg":
 			jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality})
 		default:
 			return nil, fmt.Errorf("can't encode format: %s", format)

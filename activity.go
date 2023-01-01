@@ -606,10 +606,8 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			}
 			origin = originate(xid)
 			what = "share"
-		case "Update":
-			isUpdate = true
-			fallthrough
-		case "Create":
+		case "Update", "Create":
+			isUpdate = what == "Update"
 			obj, ok = item.GetMap("object")
 			if !ok {
 				xid, _ = item.GetString("object")
@@ -662,19 +660,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		case "Move":
 			obj = item
 			what = "move"
-		case "Audio":
-			fallthrough
-		case "Image":
-			fallthrough
-		case "Video":
-			fallthrough
-		case "Question":
-			fallthrough
-		case "Note":
-			fallthrough
-		case "Article":
-			fallthrough
-		case "Page":
+		case "Audio", "Image", "Video", "Question", "Note", "Article", "Page":
 			obj = item
 			what = "honk"
 		case "Event":
@@ -1137,13 +1123,7 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 	}
 
 	switch h.What {
-	case "update":
-		fallthrough
-	case "tonk":
-		fallthrough
-	case "event":
-		fallthrough
-	case "honk":
+	case "update", "tonk", "event", "honk":
 		j["type"] = "Create"
 		jo = junk.New()
 		jo["id"] = h.XID
@@ -1645,17 +1625,9 @@ func somethingabout(obj junk.Junk) (*SomeThing, error) {
 	info := new(SomeThing)
 	t, _ := obj.GetString("type")
 	switch t {
-	case "Person":
-		fallthrough
-	case "Organization":
-		fallthrough
-	case "Application":
-		fallthrough
-	case "Service":
+	case "Person", "Organization", "Application", "Service":
 		info.What = SomeActor
-	case "OrderedCollection":
-		fallthrough
-	case "Collection":
+	case "OrderedCollection", "Collection":
 		info.What = SomeCollection
 	default:
 		return nil, fmt.Errorf("unknown object type")
