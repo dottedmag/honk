@@ -413,9 +413,9 @@ var untagged = cache.New(cache.Options{Filler: func(userid int64) (map[string]bo
 	defer rows.Close()
 	bad := make(map[string]bool)
 	for rows.Next() {
-		var xid, rid string
+		var xid, inReplyToID string
 		var flags int64
-		err = rows.Scan(&xid, &rid, &flags)
+		err = rows.Scan(&xid, &inReplyToID, &flags)
 		if err != nil {
 			elog.Printf("error scanning untag: %s", err)
 			continue
@@ -423,7 +423,7 @@ var untagged = cache.New(cache.Options{Filler: func(userid int64) (map[string]bo
 		if flags&flagIsUntagged != 0 {
 			bad[xid] = true
 		}
-		if bad[rid] {
+		if bad[inReplyToID] {
 			bad[xid] = true
 		}
 	}
@@ -445,7 +445,7 @@ func osmosis(honks []*ActivityPubActivity, userid int64, withfilt bool) []*Activ
 	j := 0
 	reverseSlice(honks)
 	for _, h := range honks {
-		if badparents[h.RID] {
+		if badparents[h.InReplyToID] {
 			badparents[h.XID] = true
 			continue
 		}

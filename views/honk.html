@@ -38,10 +38,10 @@ original: <a href="{{ .Oonker }}" rel=noreferrer>{{ .Oondle }}</a>
 {{ end }}
 </span>
 {{ else }}
-{{ if .RID }}
+{{ if .InReplyToID }}
 <br>
 <span style="margin-left: 1em;" class="clip">
-in reply to: <a href="{{ .RID }}" rel=noreferrer>{{ .RID }}</a>
+in reply to: <a href="{{ .InReplyToID }}" rel=noreferrer>{{ .InReplyToID }}</a>
 </span>
 {{ end }}
 {{ end }}
@@ -104,7 +104,7 @@ in reply to: <a href="{{ .RID }}" rel=noreferrer>{{ .RID }}</a>
 {{ else }}
 <button disabled>nope</button>
 {{ end }}
-<button onclick="return showhonkform(this, '{{ .Honk.XID }}', '{{ .Honk.Handles }}');"><a href="/newhonk?rid={{ .Honk.XID }}">honk back</a></button>
+<button onclick="return showhonkform(this, '{{ .Honk.XID }}', '{{ .Honk.Handles }}');"><a href="/newhonk?inreplytoid={{ .Honk.XID }}">honk back</a></button>
 <button onclick="return muteit(this, '{{ .Honk.Thread }}');">mute</button>
 <button onclick="return showelement('evenmore{{ .Honk.ID }}')">even more</button>
 </div>

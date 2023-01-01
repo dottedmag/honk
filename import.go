@@ -132,21 +132,21 @@ func importMastotoots(user *UserProfile, source string) {
 			continue
 		}
 		honk := ActivityPubActivity{
-			UserID:   user.ID,
-			What:     "honk",
-			Honker:   user.URL,
-			XID:      xid,
-			RID:      toot.Object.InReplyTo,
-			Date:     toot.Object.Published,
-			URL:      xid,
-			Audience: append(toot.To, toot.Cc...),
-			Text:     toot.Object.Content,
-			Thread:   toot.Object.Conversation,
-			Whofore:  2,
-			Format:   "html",
-			Precis:   toot.Object.Summary,
+			UserID:      user.ID,
+			What:        "honk",
+			Honker:      user.URL,
+			XID:         xid,
+			InReplyToID: toot.Object.InReplyTo,
+			Date:        toot.Object.Published,
+			URL:         xid,
+			Audience:    append(toot.To, toot.Cc...),
+			Text:        toot.Object.Content,
+			Thread:      toot.Object.Conversation,
+			Whofore:     2,
+			Format:      "html",
+			Precis:      toot.Object.Summary,
 		}
-		if honk.RID != "" {
+		if honk.InReplyToID != "" {
 			honk.What = "tonk"
 		}
 		if !publicAudience(honk.Audience) {

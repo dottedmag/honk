@@ -285,7 +285,7 @@ function relinklinks() {
 (function() {
 	hideelement("attachmentDescriptor")
 })();
-function showhonkform(elem, rid, hname) {
+function showhonkform(elem, inReplyToID, hname) {
 	var form = lehonkform
 	form.style = "display: block"
 	if (elem) {
@@ -296,16 +296,16 @@ function showhonkform(elem, rid, hname) {
 		elem = document.getElementById("honkformhost")
 		elem.insertAdjacentElement('afterend', form)
 	}
-	var ridinput = document.getElementById("ridinput")
-	if (rid) {
-		ridinput.value = rid
+	var inReplyToIDinput = document.getElementById("inReplytoIDinput")
+	if (inReplyToIDinput) {
+		inReplytoIDinput.value = inReplytoID
 		if (hname) {
 			honkText.value = hname + " "
 		} else {
 			honkText.value = ""
 		}
 	} else {
-		ridinput.value = ""
+		inReplyToIDinput.value = ""
 		honkText.value = ""
 	}
 	var updateinput = document.getElementById("updatexidinput")

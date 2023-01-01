@@ -35,7 +35,7 @@ create table honks (
   what text,
   honker text,
   xid text,
-  rid text,
+  inReplyToID text,
   dt text,
   url text,
   audience text,

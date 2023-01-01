@@ -379,7 +379,7 @@ type RowLike interface {
 func scanhonk(row RowLike) *ActivityPubActivity {
 	h := new(ActivityPubActivity)
 	var dt, aud string
-	err := row.Scan(&h.ID, &h.UserID, &h.Username, &h.What, &h.Honker, &h.Oonker, &h.XID, &h.RID,
+	err := row.Scan(&h.ID, &h.UserID, &h.Username, &h.What, &h.Honker, &h.Oonker, &h.XID, &h.InReplyToID,
 		&dt, &h.URL, &aud, &h.Text, &h.Precis, &h.Format, &h.Thread, &h.Whofore, &h.Flags)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -772,7 +772,7 @@ func savehonk(h *ActivityPubActivity) error {
 		return err
 	}
 
-	res, err := tx.Stmt(stmtSaveHonk).Exec(h.UserID, h.What, h.Honker, h.XID, h.RID, dt, h.URL,
+	res, err := tx.Stmt(stmtSaveHonk).Exec(h.UserID, h.What, h.Honker, h.XID, h.InReplyToID, dt, h.URL,
 		aud, h.Text, h.Thread, h.Whofore, h.Format, h.Precis,
 		h.Oonker, h.Flags)
 	if err == nil {
@@ -1121,7 +1121,7 @@ func prepareStatements(db *sql.DB) {
 	stmtDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and flavor = 'dub'")
 	stmtNamedDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and name = ? and flavor = 'dub'")
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, inReplytoID, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	limit := " order by honks.honkid desc limit 250"
 	smalllimit := " order by honks.honkid desc limit ?"
 	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
@@ -1147,7 +1147,7 @@ func prepareStatements(db *sql.DB) {
 	stmtDeleteAllMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ?")
 	stmtDeleteSomeMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus not in ('oldrev')")
 	stmtDeleteOneMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus = ?")
-	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, rid, dt, url, audience, text, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, inReplyToID, dt, url, audience, text, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	stmtDeleteHonk = sqlMustPrepare(db, "delete from honks where honkid = ?")
 	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, text = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
 	stmtSaveOnt = sqlMustPrepare(db, "insert into onts (ontology, honkid) values (?, ?)")
@@ -1168,7 +1168,7 @@ func prepareStatements(db *sql.DB) {
 	stmtGetResubmissions = sqlMustPrepare(db, "select resubmissionid, dt from resubmissions")
 	stmtLoadResubmission = sqlMustPrepare(db, "select tries, userid, rcpt, msg from resubmissions where resubmissionid = ?")
 	stmtDeleteResubmission = sqlMustPrepare(db, "delete from resubmissions where resubmissionid = ?")
-	stmtUntagged = sqlMustPrepare(db, "select xid, rid, flags from (select honkid, xid, rid, flags from honks where userid = ? order by honkid desc limit 10000) order by honkid asc")
+	stmtUntagged = sqlMustPrepare(db, "select xid, inReplyToID, flags from (select honkid, xid, inReplyToID, flags from honks where userid = ? order by honkid desc limit 10000) order by honkid asc")
 	stmtFindZonk = sqlMustPrepare(db, "select actionID from actions where userid = ? and object = ? and action = 'zonk'")
 	stmtGetActions = sqlMustPrepare(db, "select actionID, object, action from actions where userid = ? and action <> 'zonk'")
 	stmtSaveAction = sqlMustPrepare(db, "insert into actions (userid, object, action) values (?, ?, ?)")

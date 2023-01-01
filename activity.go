@@ -551,7 +551,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		}
 
 		var err error
-		var xid, rid, url, thread string
+		var xid, inReplyToID, url, thread string
 		var replies []string
 		var obj junk.Junk
 		switch what {
@@ -747,10 +747,10 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			if sens, _ := obj["sensitive"].(bool); sens && precis == "" {
 				precis = "unspecified horror"
 			}
-			rid, ok = obj.GetString("inReplyTo")
+			inReplyToID, ok = obj.GetString("inReplyTo")
 			if !ok {
 				if robj, ok := obj.GetMap("inReplyTo"); ok {
-					rid, _ = robj.GetString("id")
+					inReplyToID, _ = robj.GetString("id")
 				}
 			}
 			thread, _ = obj.GetString("context")
@@ -786,7 +786,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 				targ, _ := obj.GetString("target")
 				content += string(templates.Sprintf(`<p>Moved to <a href="%s">%s</a>`, targ, targ))
 			}
-			if what == "honk" && rid != "" {
+			if what == "honk" && inReplyToID != "" {
 				what = "tonk"
 			}
 			if len(content) > 90001 {
@@ -966,7 +966,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 
 		// init xonk
 		xonk.What = what
-		xonk.RID = rid
+		xonk.InReplyToID = inReplyToID
 		xonk.Date, _ = time.Parse(time.RFC3339, dt)
 		xonk.URL = url
 		xonk.Format = "html"
@@ -1006,14 +1006,14 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			}
 		}
 		if !isUpdate && needActivityPubActivity(user, &xonk) {
-			if rid != "" && xonk.Public {
-				if needActivityPubActivityID(user, rid) {
+			if inReplyToID != "" && xonk.Public {
+				if needActivityPubActivityID(user, inReplyToID) {
 					goingup++
-					saveonemore(rid)
+					saveonemore(inReplyToID)
 					goingup--
 				}
 				if thread == "" {
-					xx := getActivityPubActivity(user.ID, rid)
+					xx := getActivityPubActivity(user.ID, inReplyToID)
 					if xx != nil {
 						thread = xx.Thread
 					}
@@ -1158,8 +1158,8 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		jo["published"] = dt
 		jo["url"] = h.XID
 		jo["attributedTo"] = user.URL
-		if h.RID != "" {
-			jo["inReplyTo"] = h.RID
+		if h.InReplyToID != "" {
+			jo["inReplyTo"] = h.InReplyToID
 		}
 		if h.Thread != "" {
 			jo["context"] = h.Thread
@@ -1322,7 +1322,7 @@ var oldjonks = cache.New(cache.Options{Filler: func(xid string) ([]byte, bool) {
 	rawhonks := gethonksbyThread(honk.UserID, honk.Thread, 0)
 	reverseSlice(rawhonks)
 	for _, h := range rawhonks {
-		if h.RID == honk.XID && h.Public && (h.Whofore == 2 || h.IsAcked()) {
+		if h.InReplyToID == honk.XID && h.Public && (h.Whofore == 2 || h.IsAcked()) {
 			honk.Replies = append(honk.Replies, h)
 		}
 	}

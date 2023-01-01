@@ -3,7 +3,7 @@
 <form id="honkform" action="/honk" method="POST" enctype="multipart/form-data" {{ if not .IsPreview }}style="display: none"{{ end }}>
   <input type="hidden" name="CSRF" value="{{ .HonkCSRF }}">
   <input type="hidden" name="updatexid" id="updatexidinput" value = "{{ .UpdateXID }}">
-  <input type="hidden" name="rid" id="ridinput" value="{{ .InReplyTo }}">
+  <input type="hidden" name="inReplyToID" id="inReplyToIDInput" value="{{ .InReplyTo }}">
   <h3>New post</h3>
   <p>
   <details>

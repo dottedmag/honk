@@ -82,7 +82,7 @@ type ActivityPubActivity struct {
 	Oonker      string
 	Oondle      string
 	XID         string
-	RID         string
+	InReplyToID string
 	Date        time.Time
 	URL         string
 	Text        string

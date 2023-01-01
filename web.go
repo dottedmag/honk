@@ -1206,7 +1206,7 @@ func doShare(xid string, user *UserProfile) {
 		Honker:      user.URL,
 		Oonker:      oonker,
 		XID:         xonk.XID,
-		RID:         xonk.RID,
+		InReplyToID: xonk.InReplyToID,
 		Text:        xonk.Text,
 		Precis:      xonk.Precis,
 		URL:         xonk.URL,
@@ -1430,10 +1430,10 @@ func edithonkpage(w http.ResponseWriter, r *http.Request) {
 
 func newhonkpage(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
-	rid := r.FormValue("rid")
+	inReplyToID := r.FormValue("inReplyToID")
 	text := ""
 
-	xonk := getActivityPubActivity(u.UserID, rid)
+	xonk := getActivityPubActivity(u.UserID, inReplyToID)
 	if xonk != nil {
 		_, replto := handles(xonk.Honker)
 		if replto != "" {
@@ -1443,7 +1443,7 @@ func newhonkpage(w http.ResponseWriter, r *http.Request) {
 
 	templinfo := getInfo(r)
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
-	templinfo["InReplyTo"] = rid
+	templinfo["InReplyTo"] = inReplyToID
 	templinfo["Text"] = text
 	templinfo["ServerMessage"] = "compose honk"
 	templinfo["IsPreview"] = true
@@ -1564,7 +1564,7 @@ func submitwebhonk(w http.ResponseWriter, r *http.Request) {
 
 // what a hot mess this function is
 func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
-	rid := r.FormValue("rid")
+	inReplyToID := r.FormValue("inReplyToID")
 	text := r.FormValue("text")
 	format := r.FormValue("format")
 	if format == "" {
@@ -1593,7 +1593,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	} else {
 		xid := fmt.Sprintf("%s/%s/%s", user.URL, honkSep, make18CharRandomString())
 		what := "honk"
-		if rid != "" {
+		if inReplyToID != "" {
 			what = "tonk"
 		}
 		honk = &ActivityPubActivity{
@@ -1614,8 +1614,8 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	translate(honk)
 
 	var thread string
-	if rid != "" {
-		xonk := getActivityPubActivity(userinfo.UserID, rid)
+	if inReplyToID != "" {
+		xonk := getActivityPubActivity(userinfo.UserID, inReplyToID)
 		if xonk == nil {
 			http.Error(w, "replyto disappeared", http.StatusNotFound)
 			return nil
@@ -1630,7 +1630,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 				break
 			}
 		}
-		honk.RID = rid
+		honk.InReplyToID = inReplyToID
 		if xonk.Precis != "" && honk.Precis == "" {
 			honk.Precis = xonk.Precis
 			if !(strings.HasPrefix(honk.Precis, "DZ:") || strings.HasPrefix(honk.Precis, "re: re: re: ")) {
@@ -1735,7 +1735,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
 		templinfo["Honks"] = honks
 		templinfo["MapLink"] = getmaplink(userinfo)
-		templinfo["InReplyTo"] = r.FormValue("rid")
+		templinfo["InReplyTo"] = r.FormValue("inReplyToID")
 		templinfo["Text"] = r.FormValue("text")
 		templinfo["SavedFile"] = attachmentXid
 		if tm := honk.Time; tm != nil {
