@@ -82,7 +82,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 			local = true
 		}
 		if local && h.What != "shared" {
-			h.Noise = re_memes.ReplaceAllString(h.Noise, "")
+			h.Text = re_memes.ReplaceAllString(h.Text, "")
 		}
 		h.Username, h.Handle = handles(h.Honker)
 		if !local {
@@ -121,11 +121,11 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 			_, h.Oondle = handles(h.Oonker)
 		}
 		h.Precis = demoji(h.Precis)
-		h.Noise = demoji(h.Noise)
+		h.Text = demoji(h.Text)
 		h.Open = "open"
 		for _, m := range h.Mentions {
-			if !m.IsPresent(h.Noise) {
-				h.Noise = "(" + m.Who + ")" + h.Noise
+			if !m.IsPresent(h.Text) {
+				h.Text = "(" + m.Who + ")" + h.Text
 			}
 		}
 
@@ -159,9 +159,9 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 				io.WriteString(w, data)
 			}
 			p, _ := htf.String(h.Precis)
-			n, _ := htf.String(h.Noise)
+			n, _ := htf.String(h.Text)
 			h.Precis = string(p)
-			h.Noise = string(n)
+			h.Text = string(n)
 		}
 		j := 0
 		for i := 0; i < len(h.Attachments); i++ {
@@ -179,7 +179,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 		renderflags(h)
 
 		h.HTPrecis = template.HTML(h.Precis)
-		h.HTML = template.HTML(h.Noise)
+		h.HTML = template.HTML(h.Text)
 		if redo := relingo[h.What]; redo != "" {
 			h.What = redo
 		}
@@ -208,20 +208,20 @@ func replaceimgsand(zap map[string]bool, absolute bool) func(node *html.Node) st
 }
 
 func translateChatMessage(ch *ChatMessage) {
-	noise := ch.Noise
+	text := ch.Text
 	if ch.Format == "markdown" {
-		noise = markitzero(noise)
+		text = markitzero(text)
 	}
 	var htf htfilter.Filter
 	htf.SpanClasses = allowedclasses
 	htf.BaseURL, _ = url.Parse(ch.XID)
-	ch.HTML, _ = htf.String(noise)
+	ch.HTML, _ = htf.String(text)
 }
 
 func filterChatMessage(ch *ChatMessage) {
 	translateChatMessage(ch)
 
-	noise := string(ch.HTML)
+	text := string(ch.HTML)
 
 	local := originate(ch.XID) == serverName
 
@@ -244,7 +244,7 @@ func filterChatMessage(ch *ChatMessage) {
 		}
 		return e
 	}
-	noise = re_emus.ReplaceAllStringFunc(noise, emuxifier)
+	text = re_emus.ReplaceAllStringFunc(text, emuxifier)
 	j := 0
 	for i := 0; i < len(ch.Attachments); i++ {
 		if !zap[ch.Attachments[i].XID] {
@@ -254,8 +254,8 @@ func filterChatMessage(ch *ChatMessage) {
 	}
 	ch.Attachments = ch.Attachments[:j]
 
-	noise = strings.TrimPrefix(noise, "<p>")
-	ch.HTML = template.HTML(noise)
+	text = strings.TrimPrefix(text, "<p>")
+	ch.HTML = template.HTML(text)
 	if short := shortname(ch.UserID, ch.Who); short != "" {
 		ch.Handle = short
 	} else {
@@ -281,22 +281,22 @@ func imaginate(honk *ActivityPubActivity) {
 	var htf htfilter.Filter
 	htf.Imager = inlineimgsfor(honk)
 	htf.BaseURL, _ = url.Parse(honk.XID)
-	htf.String(honk.Noise)
+	htf.String(honk.Text)
 }
 
 func translate(honk *ActivityPubActivity) {
 	if honk.Format == "html" {
 		return
 	}
-	noise := honk.Noise
-	if strings.HasPrefix(noise, "DZ:") {
-		idx := strings.Index(noise, "\n")
+	text := honk.Text
+	if strings.HasPrefix(text, "DZ:") {
+		idx := strings.Index(text, "\n")
 		if idx == -1 {
-			honk.Precis = noise
-			noise = ""
+			honk.Precis = text
+			text = ""
 		} else {
-			honk.Precis = noise[:idx]
-			noise = noise[idx+1:]
+			honk.Precis = text[:idx]
+			text = text[idx+1:]
 		}
 	}
 	honk.Precis = markitzero(strings.TrimSpace(honk.Precis))
@@ -304,9 +304,9 @@ func translate(honk *ActivityPubActivity) {
 	var marker mz.Marker
 	marker.HashLinker = ontoreplacer
 	marker.AtLinker = attoreplacer
-	noise = strings.TrimSpace(noise)
-	noise = marker.Mark(noise)
-	honk.Noise = noise
+	text = strings.TrimSpace(text)
+	text = marker.Mark(text)
+	honk.Text = text
 	honk.Onts = stringArrayTrimUntilDupe(marker.HashTags)
 	honk.Mentions = bunchofgrapes(marker.Mentions)
 }
@@ -318,9 +318,9 @@ func redoimages(honk *ActivityPubActivity) {
 		htf.Imager = replaceimgsand(zap, true)
 		htf.SpanClasses = allowedclasses
 		p, _ := htf.String(honk.Precis)
-		n, _ := htf.String(honk.Noise)
+		t, _ := htf.String(honk.Text)
 		honk.Precis = string(p)
-		honk.Noise = string(n)
+		honk.Text = string(t)
 	}
 	j := 0
 	for i := 0; i < len(honk.Attachments); i++ {
@@ -331,8 +331,8 @@ func redoimages(honk *ActivityPubActivity) {
 	}
 	honk.Attachments = honk.Attachments[:j]
 
-	honk.Noise = re_memes.ReplaceAllString(honk.Noise, "")
-	honk.Noise = strings.Replace(honk.Noise, "<a href=", "<a class=\"mention u-url\" href=", -1)
+	honk.Text = re_memes.ReplaceAllString(honk.Text, "")
+	honk.Text = strings.Replace(honk.Text, "<a href=", "<a class=\"mention u-url\" href=", -1)
 }
 
 func randomString(b []byte) string {
@@ -397,8 +397,8 @@ var emucache = cache.New(cache.Options{Filler: func(ename string) (Emu, bool) {
 	return Emu{Name: ename, ID: "", Type: "image/png"}, true
 }, Duration: 10 * time.Second})
 
-func herdofemus(noise string) []Emu {
-	m := re_emus.FindAllString(noise, -1)
+func herdofemus(text string) []Emu {
+	m := re_emus.FindAllString(text, -1)
 	m = stringArrayTrimUntilDupe(m)
 	var emus []Emu
 	for _, e := range m {
@@ -448,7 +448,7 @@ func memetize(honk *ActivityPubActivity) {
 		honk.Attachments = append(honk.Attachments, d)
 		return ""
 	}
-	honk.Noise = re_memes.ReplaceAllStringFunc(honk.Noise, repl)
+	honk.Text = re_memes.ReplaceAllStringFunc(honk.Text, repl)
 }
 
 var re_quickmention = regexp.MustCompile("(^|[ \n])@[[:alnum:]]+([ \n.]|$)")

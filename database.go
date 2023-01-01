@@ -329,11 +329,11 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 			continue
 		}
 		t = "%" + t + "%"
-		queries = append(queries, "noise"+negate+"like ?")
+		queries = append(queries, "text"+negate+"like ?")
 		params = append(params, t)
 	}
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	where := "where " + strings.Join(queries, " and ")
 	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
 	limit := " order by honks.honkid desc limit 250"
@@ -380,7 +380,7 @@ func scanhonk(row RowLike) *ActivityPubActivity {
 	h := new(ActivityPubActivity)
 	var dt, aud string
 	err := row.Scan(&h.ID, &h.UserID, &h.Username, &h.What, &h.Honker, &h.Oonker, &h.XID, &h.RID,
-		&dt, &h.URL, &aud, &h.Noise, &h.Precis, &h.Format, &h.Thread, &h.Whofore, &h.Flags)
+		&dt, &h.URL, &aud, &h.Text, &h.Precis, &h.Format, &h.Thread, &h.Whofore, &h.Flags)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			elog.Printf("error scanning honk: %s", err)
@@ -603,7 +603,7 @@ func saveChatMessage(ch *ChatMessage) error {
 		return err
 	}
 
-	res, err := tx.Stmt(stmtSaveChatMessage).Exec(ch.UserID, ch.XID, ch.Who, ch.Target, dt, ch.Noise, ch.Format)
+	res, err := tx.Stmt(stmtSaveChatMessage).Exec(ch.UserID, ch.XID, ch.Who, ch.Target, dt, ch.Text, ch.Format)
 	if err == nil {
 		ch.ID, _ = res.LastInsertId()
 		for _, d := range ch.Attachments {
@@ -712,7 +712,7 @@ func loadChat(userid int64) []*Chat {
 	for rows.Next() {
 		ch := new(ChatMessage)
 		var dt string
-		err = rows.Scan(&ch.ID, &ch.UserID, &ch.XID, &ch.Who, &ch.Target, &dt, &ch.Noise, &ch.Format)
+		err = rows.Scan(&ch.ID, &ch.UserID, &ch.XID, &ch.Who, &ch.Target, &dt, &ch.Text, &ch.Format)
 		if err != nil {
 			elog.Printf("error scanning chat message: %s", err)
 			continue
@@ -773,7 +773,7 @@ func savehonk(h *ActivityPubActivity) error {
 	}
 
 	res, err := tx.Stmt(stmtSaveHonk).Exec(h.UserID, h.What, h.Honker, h.XID, h.RID, dt, h.URL,
-		aud, h.Noise, h.Thread, h.Whofore, h.Format, h.Precis,
+		aud, h.Text, h.Thread, h.Whofore, h.Format, h.Precis,
 		h.Oonker, h.Flags)
 	if err == nil {
 		h.ID, _ = res.LastInsertId()
@@ -796,7 +796,7 @@ func savehonk(h *ActivityPubActivity) error {
 
 func updateHonk(h *ActivityPubActivity) error {
 	old := getActivityPubActivity(h.UserID, h.XID)
-	oldrev := OldRevision{Precis: old.Precis, Noise: old.Noise}
+	oldrev := OldRevision{Precis: old.Precis, Text: old.Text}
 	dt := h.Date.UTC().Format(dbtimeformat)
 
 	db := opendatabase()
@@ -808,7 +808,7 @@ func updateHonk(h *ActivityPubActivity) error {
 
 	err = deleteextras(tx, h.ID, false)
 	if err == nil {
-		_, err = tx.Stmt(stmtUpdateHonk).Exec(h.Precis, h.Noise, h.Format, h.Whofore, dt, h.ID)
+		_, err = tx.Stmt(stmtUpdateHonk).Exec(h.Precis, h.Text, h.Format, h.Whofore, dt, h.ID)
 	}
 	if err == nil {
 		err = saveextras(tx, h)
@@ -1121,7 +1121,7 @@ func prepareStatements(db *sql.DB) {
 	stmtDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and flavor = 'dub'")
 	stmtNamedDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and name = ? and flavor = 'dub'")
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, noise, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	limit := " order by honks.honkid desc limit 250"
 	smalllimit := " order by honks.honkid desc limit ?"
 	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
@@ -1147,9 +1147,9 @@ func prepareStatements(db *sql.DB) {
 	stmtDeleteAllMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ?")
 	stmtDeleteSomeMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus not in ('oldrev')")
 	stmtDeleteOneMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus = ?")
-	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, rid, dt, url, audience, noise, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, rid, dt, url, audience, text, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	stmtDeleteHonk = sqlMustPrepare(db, "delete from honks where honkid = ?")
-	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, noise = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
+	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, text = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
 	stmtSaveOnt = sqlMustPrepare(db, "insert into onts (ontology, honkid) values (?, ?)")
 	stmtDeleteOnts = sqlMustPrepare(db, "delete from onts where honkid = ?")
 	stmtSaveAttachment = sqlMustPrepare(db, "insert into attachments (honkid, chatMessageId, fileid) values (?, ?, ?)")
@@ -1184,8 +1184,8 @@ func prepareStatements(db *sql.DB) {
 	stmtSaveFilter = sqlMustPrepare(db, "insert into hfcs (userid, json) values (?, ?)")
 	stmtDeleteFilter = sqlMustPrepare(db, "delete from hfcs where userid = ? and hfcsid = ?")
 	stmtGetTracks = sqlMustPrepare(db, "select fetches from tracks where xid = ?")
-	stmtSaveChatMessage = sqlMustPrepare(db, "insert into chatMessages (userid, xid, who, target, dt, noise, format) values (?, ?, ?, ?, ?, ?, ?)")
-	stmtLoadChatMessages = sqlMustPrepare(db, "select chatMessageId, userid, xid, who, target, dt, noise, format from chatMessages where userid = ? and dt > ? order by chatMessageId asc")
+	stmtSaveChatMessage = sqlMustPrepare(db, "insert into chatMessages (userid, xid, who, target, dt, text, format) values (?, ?, ?, ?, ?, ?, ?)")
+	stmtLoadChatMessages = sqlMustPrepare(db, "select chatMessageId, userid, xid, who, target, dt, text, format from chatMessages where userid = ? and dt > ? order by chatMessageId asc")
 	stmtGetChats = sqlMustPrepare(db, "select distinct(target) from chatMessages where userid = ?")
 	stmtGetTopDubbed = sqlMustPrepare(db, `SELECT COUNT(*) as c,userid FROM honkers WHERE flavor = "dub" GROUP BY userid`)
 }

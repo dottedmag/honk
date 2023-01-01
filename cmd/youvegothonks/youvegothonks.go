@@ -15,7 +15,7 @@ import (
 type Honk struct {
 	ID     int
 	Honker string
-	Noise  string
+	Text   string
 }
 
 type HonkSet struct {
@@ -69,7 +69,7 @@ func main() {
 	for {
 		honks := gethonks(server, token, wanted)
 		for _, h := range honks.Honks {
-			fmt.Printf("you've got a honk from %s\n%s\n", h.Honker, h.Noise)
+			fmt.Printf("you've got a honk from %s\n%s\n", h.Honker, h.Text)
 			if wanted < h.ID {
 				wanted = h.ID
 			}

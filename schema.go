@@ -39,7 +39,7 @@ create table honks (
   dt text,
   url text,
   audience text,
-  noise text,
+  text text,
   thread text,
   whofore integer,
   format text,
@@ -59,7 +59,7 @@ create table chatMessages (
   who txt,
   target text,
   dt text,
-  noise text,
+  text text,
   format text
 );
 

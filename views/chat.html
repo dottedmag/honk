@@ -7,8 +7,8 @@
 <input type="hidden" name="CSRF" value="{{ .ChonkCSRF }}">
 <p><label for=target>target:</label><br>
 <input type="text" name="target" value="" autocomplete=off>
-<p><label for=noise>noise:</label><br>
-<textarea name="noise" id="noise"></textarea>
+<p><label for=text>text:</label><br>
+<textarea name="text" id="text"></textarea>
 <p><button name="chonk" value="chonk">chonk</button>
 <label class=button id="attachment">attach: <input onchange="updateAttachment(this);" type="file" name="attachment"><span></span></label>
 </form>
@@ -56,8 +56,8 @@ chat: {{ .Target }}
 <form action="/sendchonk" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="CSRF" value="{{ $chonkcsrf }}">
 <input type="hidden" name="target" value="{{ $target }}" autocomplete=off>
-<p><label for=noise>noise:</label><br>
-<textarea name="noise" id="noise"></textarea>
+<p><label for=text>text:</label><br>
+<textarea name="text" id="text"></textarea>
 <p><button name="chonk" value="chonk">chonk</button>
 <label class=button id="attachment">attach: <input onchange="updateAttachment(this);" type="file" name="attachment"><span></span></label>
 </form>

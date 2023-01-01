@@ -140,7 +140,7 @@ func importMastotoots(user *UserProfile, source string) {
 			Date:     toot.Object.Published,
 			URL:      xid,
 			Audience: append(toot.To, toot.Cc...),
-			Noise:    toot.Object.Content,
+			Text:     toot.Object.Content,
 			Thread:   toot.Object.Conversation,
 			Whofore:  2,
 			Format:   "html",
@@ -400,14 +400,14 @@ func importTwitter(username, source string) {
 		}
 
 		what := "honk"
-		noise := ""
+		text := ""
 		if parent := tweetmap[t.Tweet.InReplyToStatusID]; parent != nil {
 			t.thread = parent.thread
 			what = "tonk"
 		} else {
 			t.thread = "data:,acoustichonkytonk-" + t.Tweet.IdStr
 			if t.Tweet.InReplyToScreenName != "" {
-				noise = fmt.Sprintf("re: https://twitter.com/%s/status/%s\n\n",
+				text = fmt.Sprintf("re: https://twitter.com/%s/status/%s\n\n",
 					t.Tweet.InReplyToScreenName, t.Tweet.InReplyToStatusID)
 				what = "tonk"
 			}
@@ -426,11 +426,11 @@ func importTwitter(username, source string) {
 			Public:   true,
 			Whofore:  2,
 		}
-		noise += t.Tweet.FullText
+		text += t.Tweet.FullText
 		// unbelievable
-		noise = html.UnescapeString(noise)
+		text = html.UnescapeString(text)
 		for _, r := range t.Tweet.Entities.Urls {
-			noise = strings.Replace(noise, r.URL, r.ExpandedURL, -1)
+			text = strings.Replace(text, r.URL, r.ExpandedURL, -1)
 		}
 		for _, m := range t.Tweet.Entities.Media {
 			u := m.MediaURL
@@ -453,12 +453,12 @@ func importTwitter(username, source string) {
 				FileID: fileid,
 			}
 			honk.Attachments = append(honk.Attachments, attachment)
-			noise = strings.Replace(noise, m.URL, "", -1)
+			text = strings.Replace(text, m.URL, "", -1)
 		}
 		for _, ht := range t.Tweet.Entities.Hashtags {
 			honk.Onts = append(honk.Onts, "#"+ht.Text)
 		}
-		honk.Noise = noise
+		honk.Text = text
 		err := savehonk(&honk)
 		log.Printf("honk saved %v -> %v", xid, err)
 	}

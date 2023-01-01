@@ -1207,7 +1207,7 @@ func doShare(xid string, user *UserProfile) {
 		Oonker:      oonker,
 		XID:         xonk.XID,
 		RID:         xonk.RID,
-		Noise:       xonk.Noise,
+		Text:        xonk.Text,
 		Precis:      xonk.Precis,
 		URL:         xonk.URL,
 		Date:        dt,
@@ -1254,7 +1254,7 @@ func sendzonkofsorts(xonk *ActivityPubActivity, user *UserProfile, what string, 
 		XID:      xonk.XID,
 		Date:     time.Now().UTC(),
 		Audience: stringArrayTrimUntilDupe(xonk.Audience),
-		Noise:    aux,
+		Text:     aux,
 	}
 	zonk.Public = publicAudience(zonk.Audience)
 
@@ -1398,7 +1398,7 @@ func edithonkpage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	noise := honk.Noise
+	text := honk.Text
 
 	honks := []*ActivityPubActivity{honk}
 	attachmentsForHonks(honks)
@@ -1407,7 +1407,7 @@ func edithonkpage(w http.ResponseWriter, r *http.Request) {
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
 	templinfo["Honks"] = honks
 	templinfo["MapLink"] = getmaplink(u)
-	templinfo["Noise"] = noise
+	templinfo["Text"] = text
 	templinfo["SavedPlace"] = honk.Place
 	if tm := honk.Time; tm != nil {
 		templinfo["ShowTime"] = ";"
@@ -1431,20 +1431,20 @@ func edithonkpage(w http.ResponseWriter, r *http.Request) {
 func newhonkpage(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
 	rid := r.FormValue("rid")
-	noise := ""
+	text := ""
 
 	xonk := getActivityPubActivity(u.UserID, rid)
 	if xonk != nil {
 		_, replto := handles(xonk.Honker)
 		if replto != "" {
-			noise = "@" + replto + " "
+			text = "@" + replto + " "
 		}
 	}
 
 	templinfo := getInfo(r)
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
 	templinfo["InReplyTo"] = rid
-	templinfo["Noise"] = noise
+	templinfo["Text"] = text
 	templinfo["ServerMessage"] = "compose honk"
 	templinfo["IsPreview"] = true
 	err := readviews.Execute(w, "honkpage.html", templinfo)
@@ -1565,7 +1565,7 @@ func submitwebhonk(w http.ResponseWriter, r *http.Request) {
 // what a hot mess this function is
 func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	rid := r.FormValue("rid")
-	noise := r.FormValue("noise")
+	text := r.FormValue("text")
 	format := r.FormValue("format")
 	if format == "" {
 		format = "markdown"
@@ -1607,10 +1607,10 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		}
 	}
 
-	noise = strings.Replace(noise, "\r", "", -1)
-	noise = quickrename(noise, userinfo.UserID)
-	noise = tweeterize(noise)
-	honk.Noise = noise
+	text = strings.Replace(text, "\r", "", -1)
+	text = quickrename(text, userinfo.UserID)
+	text = tweeterize(text)
+	honk.Text = text
 	translate(honk)
 
 	var thread string
@@ -1640,7 +1640,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	} else {
 		honk.Audience = []string{activitystreamsPublicString}
 	}
-	if honk.Noise != "" && honk.Noise[0] == '@' {
+	if honk.Text != "" && honk.Text[0] == '@' {
 		honk.Audience = append(grapevine(honk.Mentions), honk.Audience...)
 	} else {
 		honk.Audience = append(honk.Audience, grapevine(honk.Mentions)...)
@@ -1726,7 +1726,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	}
 
 	// back to markdown
-	honk.Noise = noise
+	honk.Text = text
 
 	if r.FormValue("preview") == "preview" {
 		honks := []*ActivityPubActivity{honk}
@@ -1736,7 +1736,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 		templinfo["Honks"] = honks
 		templinfo["MapLink"] = getmaplink(userinfo)
 		templinfo["InReplyTo"] = r.FormValue("rid")
-		templinfo["Noise"] = r.FormValue("noise")
+		templinfo["Text"] = r.FormValue("text")
 		templinfo["SavedFile"] = attachmentXid
 		if tm := honk.Time; tm != nil {
 			templinfo["ShowTime"] = ";"
@@ -1808,7 +1808,7 @@ func showChat(w http.ResponseWriter, r *http.Request) {
 func submitChatMessage(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
 	user, _ := getUserBio(u.Username)
-	noise := r.FormValue("noise")
+	text := r.FormValue("text")
 	target := r.FormValue("target")
 	format := "markdown"
 	dt := time.Now().UTC()
@@ -1827,7 +1827,7 @@ func submitChatMessage(w http.ResponseWriter, r *http.Request) {
 		Who:    user.URL,
 		Target: target,
 		Date:   dt,
-		Noise:  noise,
+		Text:   text,
 		Format: format,
 	}
 	d, err := submitAttachment(w, r)

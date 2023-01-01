@@ -39,11 +39,11 @@ func lookandsay(n int) string {
 	return s
 }
 
-func honkahonk(server, token, noise string) {
+func honkahonk(server, token, text string) {
 	form := make(url.Values)
 	form.Add("token", token)
 	form.Add("action", "honk")
-	form.Add("noise", noise)
+	form.Add("text", text)
 	apiurl := fmt.Sprintf("https://%s/api", server)
 	req, err := http.NewRequest("POST", apiurl, strings.NewReader(form.Encode()))
 	if err != nil {

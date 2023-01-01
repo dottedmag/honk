@@ -300,17 +300,17 @@ function showhonkform(elem, rid, hname) {
 	if (rid) {
 		ridinput.value = rid
 		if (hname) {
-			honknoise.value = hname + " "
+			honkText.value = hname + " "
 		} else {
-			honknoise.value = ""
+			honkText.value = ""
 		}
 	} else {
 		ridinput.value = ""
-		honknoise.value = ""
+		honkText.value = ""
 	}
 	var updateinput = document.getElementById("updatexidinput")
 	updateinput.value = ""
-	document.getElementById("honknoise").focus()
+	document.getElementById("honkText").focus()
 	return false
 }
 function cancelhonking() {

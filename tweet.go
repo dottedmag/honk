@@ -110,7 +110,7 @@ func tweetExtractor(r io.Reader, url string, seen map[string]bool) string {
 	return buf.String()
 }
 
-func tweeterize(noise string) string {
+func tweeterize(text string) string {
 	seen := make(map[string]bool)
 
 	tweetFetcher := func(tweet string) string {
@@ -143,5 +143,5 @@ func tweeterize(noise string) string {
 		return tweetExtractor(r, url, seen)
 	}
 
-	return re_tweets.ReplaceAllStringFunc(noise, tweetFetcher)
+	return re_tweets.ReplaceAllStringFunc(text, tweetFetcher)
 }

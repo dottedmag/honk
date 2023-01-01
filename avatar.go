@@ -185,7 +185,7 @@ var re_flags = regexp.MustCompile("flag:[[:alnum:],]+")
 func fixupflags(h *ActivityPubActivity) []Emu {
 	var emus []Emu
 	count := 0
-	h.Noise = re_flags.ReplaceAllStringFunc(h.Noise, func(m string) string {
+	h.Text = re_flags.ReplaceAllStringFunc(h.Text, func(m string) string {
 		count++
 		var e Emu
 		e.Name = fmt.Sprintf(":flag%d:", count)
@@ -197,7 +197,7 @@ func fixupflags(h *ActivityPubActivity) []Emu {
 }
 
 func renderflags(h *ActivityPubActivity) {
-	h.Noise = re_flags.ReplaceAllStringFunc(h.Noise, func(m string) string {
+	h.Text = re_flags.ReplaceAllStringFunc(h.Text, func(m string) string {
 		code := m[5:]
 		src := fmt.Sprintf("https://%s/flag/%s", serverName, code)
 		return fmt.Sprintf(`<img class="emu" title="%s" src="%s">`, "flag", src)

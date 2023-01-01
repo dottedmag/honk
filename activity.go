@@ -794,7 +794,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 				content = content[:90001]
 			}
 
-			xonk.Noise = content
+			xonk.Text = content
 			xonk.Precis = precis
 			if rejectxonk(&xonk) {
 				dlog.Printf("fast reject: %s", xid)
@@ -986,7 +986,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 				Who:         xonk.Honker,
 				Target:      xonk.Honker,
 				Date:        xonk.Date,
-				Noise:       xonk.Noise,
+				Text:        xonk.Text,
 				Format:      xonk.Format,
 				Attachments: xonk.Attachments,
 			}
@@ -1206,7 +1206,7 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 			t["name"] = o
 			tags = append(tags, t)
 		}
-		for _, e := range herdofemus(h.Noise) {
+		for _, e := range herdofemus(h.Text) {
 			t := junk.New()
 			t["id"] = e.ID
 			t["type"] = "Emoji"
@@ -1261,7 +1261,7 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 			jo["attachment"] = atts
 		}
 		jo["summary"] = html.EscapeString(h.Precis)
-		jo["content"] = h.Noise
+		jo["content"] = h.Text
 		j["object"] = jo
 	case "share":
 		j["type"] = "Announce"
@@ -1295,7 +1295,7 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		if h.Thread != "" {
 			j["context"] = h.Thread
 		}
-		j["content"] = h.Noise
+		j["content"] = h.Text
 	case "deack":
 		b := junk.New()
 		b["id"] = user.URL + "/" + "ack" + "/" + shortxid(h.XID)
@@ -1376,7 +1376,7 @@ func serializeChatMessage(user *UserProfile, ch *ChatMessage) []byte {
 		jo["attachment"] = atts
 	}
 	var tags []junk.Junk
-	for _, e := range herdofemus(ch.Noise) {
+	for _, e := range herdofemus(ch.Text) {
 		t := junk.New()
 		t["id"] = e.ID
 		t["type"] = "Emoji"

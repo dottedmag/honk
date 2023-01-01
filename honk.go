@@ -85,7 +85,7 @@ type ActivityPubActivity struct {
 	RID         string
 	Date        time.Time
 	URL         string
-	Noise       string
+	Text        string
 	Precis      string
 	Format      string
 	Thread      string
@@ -119,7 +119,7 @@ type ChatMessage struct {
 	Who         string
 	Target      string
 	Date        time.Time
-	Noise       string
+	Text        string
 	Format      string
 	Attachments []*Attachment
 	Handle      string
@@ -136,18 +136,18 @@ type Mention struct {
 	Where string
 }
 
-func (mention *Mention) IsPresent(noise string) bool {
+func (mention *Mention) IsPresent(text string) bool {
 	nick := strings.TrimLeft(mention.Who, "@")
 	idx := strings.IndexByte(nick, '@')
 	if idx != -1 {
 		nick = nick[:idx]
 	}
-	return strings.Contains(noise, ">@"+nick) || strings.Contains(noise, "@<span>"+nick)
+	return strings.Contains(text, ">@"+nick) || strings.Contains(text, "@<span>"+nick)
 }
 
 type OldRevision struct {
 	Precis string
-	Noise  string
+	Text   string
 }
 
 const (

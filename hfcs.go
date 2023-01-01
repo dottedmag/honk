@@ -320,7 +320,7 @@ func matchfilterX(h *ActivityPubActivity, f *Filter) string {
 		re := f.re_text
 		m := re.FindString(h.Precis)
 		if m == "" {
-			m = re.FindString(h.Noise)
+			m = re.FindString(h.Text)
 		}
 		if m == "" {
 			for _, d := range h.Attachments {
@@ -391,10 +391,10 @@ func unsee(honks []*ActivityPubActivity, userid int64) {
 			}
 			for _, f := range rwfilts {
 				if matchfilter(h, f) {
-					h.Noise = f.re_rewrite.ReplaceAllString(h.Noise, f.Replace)
+					h.Text = f.re_rewrite.ReplaceAllString(h.Text, f.Replace)
 				}
 			}
-			if len(h.Noise) > 6000 && h.Open == "open" {
+			if len(h.Text) > 6000 && h.Open == "open" {
 				if h.Precis == "" {
 					h.Precis = "really freaking long"
 				}
