@@ -534,7 +534,7 @@ func ximport(w http.ResponseWriter, r *http.Request) {
 		if p != nil {
 			xid = p.XID
 		}
-		j, err := GetJunk(u.UserID, xid)
+		j, err := getAndParseLongTimeout(u.UserID, xid)
 		if err != nil {
 			http.Error(w, "error getting external object", http.StatusInternalServerError)
 			ilog.Printf("error getting external object: %s", err)
@@ -2108,8 +2108,8 @@ func avatarWebHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Else, we fetch it now
 	xid := n
-	// j, err := GetJunk(u.UserID, xid)
-	j, err := GetJunk(0, xid)
+	// j, err := getAndParseLongTimeout(u.UserID, xid)
+	j, err := getAndParseLongTimeout(0, xid)
 	if err != nil {
 		easyAvatar(r, n, w)
 		return
