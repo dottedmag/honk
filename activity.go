@@ -1077,7 +1077,7 @@ func rubadubdub(user *UserProfile, req junk.Junk) {
 	deliverate(0, user.ID, actor, must.OK1(json.Marshal(j)), true)
 }
 
-func itakeitallback(user *UserProfile, xid string, owner string, folxid string) {
+func sendUndo(user *UserProfile, xid string, owner string, folxid string) {
 	j := tj.O{
 		"@context": atContextString,
 		"id":       user.URL + "/unsub/" + folxid,
@@ -1896,7 +1896,7 @@ func unfollowyou(user *UserProfile, honkerid int64) {
 		elog.Printf("error updating honker: %s", err)
 		return
 	}
-	go itakeitallback(user, url, owner, folxid)
+	go sendUndo(user, url, owner, folxid)
 }
 
 func followyou2(user *UserProfile, j junk.Junk) {
