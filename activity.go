@@ -41,19 +41,31 @@ import (
 	"humungus.tedunangst.com/r/webs/templates"
 )
 
+// ++
 var ldjsonContentType = `application/ld+json; profile="https://www.w3.org/ns/activitystreams"`
+
+// ++
 var activityJsonContentType = `application/activity+json`
+
+// ++
 var atContextString = "https://www.w3.org/ns/activitystreams"
+
+// ++
 var activitystreamsPublicString = "https://www.w3.org/ns/activitystreams#Public"
 
+// ++
 var fastTimeout time.Duration = 5
+
+// ++
 var slowTimeout time.Duration = 30
 
+// ++
 var activityStreamsMediaTypes = []string{
 	`application/ld+json`,
 	`application/activity+json`,
 }
 
+// ++
 func isActivityStreamsMediaType(ct string) bool {
 	ct = strings.ToLower(ct)
 	for _, at := range activityStreamsMediaTypes {
@@ -64,6 +76,7 @@ func isActivityStreamsMediaType(ct string) bool {
 	return false
 }
 
+// ++
 var develClient = &http.Client{
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -72,10 +85,12 @@ var develClient = &http.Client{
 	},
 }
 
+// ++
 func PostJSON(keyname string, key httpsig.PrivateKey, url string, j tj.O) error {
 	return PostMsg(keyname, key, url, must.OK1(json.Marshal(j)))
 }
 
+// ++
 func PostMsg(keyname string, key httpsig.PrivateKey, url string, msg []byte) error {
 	client := http.DefaultClient
 	if develMode {
@@ -107,14 +122,17 @@ func PostMsg(keyname string, key httpsig.PrivateKey, url string, msg []byte) err
 	return nil
 }
 
+// -- junk
 func getAndParseLongTimeout(userid int64, url string) (junk.Junk, error) {
 	return getAndParseWithTimeout(userid, url, slowTimeout*time.Second)
 }
 
+// -- junk
 func getAndParseShortTimeout(userid int64, url string) (junk.Junk, error) {
 	return getAndParseWithTimeout(userid, url, fastTimeout*time.Second)
 }
 
+// -- junk
 func getAndParseWithRetry(userid int64, url string) (junk.Junk, error) {
 	j, err := getAndParseLongTimeout(userid, url)
 	if err != nil {
@@ -135,23 +153,24 @@ func getAndParseWithRetry(userid int64, url string) (junk.Junk, error) {
 
 var flightdeck = gate.NewSerializer()
 
+// ++
 var signGets = true
 
-func getAndParse(userid int64, url string, args junk.GetArgs) (junk.Junk, error) {
+// -- junk ziggies
+func getAndParse(userid int64, url string, accept string, agent string, timeout time.Duration, client *http.Client) (junk.Junk, error) {
 	log.Printf("Outbound (getAndParse) Request: %v", url)
-	client := http.DefaultClient
-	if args.Client != nil {
-		client = args.Client
+	if client == nil {
+		client = http.DefaultClient
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	if args.Accept != "" {
-		req.Header.Set("Accept", args.Accept)
+	if accept != "" {
+		req.Header.Set("Accept", accept)
 	}
-	if args.Agent != "" {
-		req.Header.Set("User-Agent", args.Agent)
+	if agent != "" {
+		req.Header.Set("User-Agent", agent)
 	}
 	if signGets {
 		var ki *KeyInfo
@@ -160,8 +179,8 @@ func getAndParse(userid int64, url string, args junk.GetArgs) (junk.Junk, error)
 			httpsig.SignRequest(ki.keyname, ki.seckey, req, nil)
 		}
 	}
-	if args.Timeout != 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), args.Timeout)
+	if timeout != 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		req = req.WithContext(ctx)
 	}
@@ -179,6 +198,7 @@ func getAndParse(userid int64, url string, args junk.GetArgs) (junk.Junk, error)
 	return junk.Read(resp.Body)
 }
 
+// -- junk
 func getAndParseWithTimeout(userid int64, url string, timeout time.Duration) (junk.Junk, error) {
 	log.Printf("Outbound (getAndParseWithTimeout) Request: %v", url)
 	client := http.DefaultClient
@@ -190,12 +210,7 @@ func getAndParseWithTimeout(userid int64, url string, timeout time.Duration) (ju
 		if strings.Contains(url, ".well-known/webfinger?resource") {
 			at = "application/jrd+json"
 		}
-		j, err := getAndParse(userid, url, junk.GetArgs{
-			Accept:  at,
-			Agent:   "honksnonk/5.0; " + serverName,
-			Timeout: timeout,
-			Client:  client,
-		})
+		j, err := getAndParse(userid, url, at, "honksnonk/5.0; "+serverName, timeout, client)
 		// log.Printf("debug junk %#v", j)
 		if err != nil {
 			log.Printf("Outbound (getAndParseWithTimeout) Request: %v Failed! %v", url, err)
