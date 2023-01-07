@@ -400,9 +400,8 @@ type Box struct {
 }
 
 var boxofboxes = cache.New(cache.Options{Filler: func(ident string) (*Box, bool) {
-	var info string
-	row := stmtGetXonker.QueryRow(ident, "boxes")
-	err := row.Scan(&info)
+	box := &Box{}
+	err := stmtActorGetBoxes.QueryRow(ident).Scan(&box.In, &box.Out, &box.Shared)
 	if err != nil {
 		dlog.Printf("need to get boxes for %s", ident)
 		var j junk.Junk
@@ -412,13 +411,10 @@ var boxofboxes = cache.New(cache.Options{Filler: func(ident string) (*Box, bool)
 			return nil, false
 		}
 		allinjest(originate(ident), j)
-		row = stmtGetXonker.QueryRow(ident, "boxes")
-		err = row.Scan(&info)
+		err = stmtActorGetBoxes.QueryRow(ident).Scan(&box.In, &box.Out, &box.Shared)
 	}
 	if err == nil {
-		m := strings.Split(info, " ")
-		b := &Box{In: m[0], Out: m[1], Shared: m[2]}
-		return b, true
+		return box, true
 	}
 	return nil, false
 }})
@@ -1584,9 +1580,7 @@ var handfull = cache.New(cache.Options{Filler: func(name string) (string, bool) 
 		return "", true
 	}
 	var href string
-	row := stmtGetXonker.QueryRow(name, "fishname")
-	err := row.Scan(&href)
-	if err == nil {
+	if err := stmtFriendlyNameGetHref.QueryRow(m[0], m[1]).Scan(&href); err == nil {
 		return href, true
 	}
 	dlog.Printf("fishing for %s", name)
@@ -1605,9 +1599,7 @@ var handfull = cache.New(cache.Options{Filler: func(name string) (string, bool) 
 		rel, _ := l.GetString("rel")
 		t, _ := l.GetString("type")
 		if rel == "self" && isActivityStreamsMediaType(t) {
-			when := time.Now().UTC().Format(dbtimeformat)
-			_, err := stmtSaveXonker.Exec(name, href, "fishname", when)
-			if err != nil {
+			if _, err := stmtFriendlyNameSetHref.Exec(name, href); err != nil {
 				elog.Printf("error saving fishname: %s", err)
 			}
 			return href, true
@@ -1684,7 +1676,7 @@ func allinjest(origin string, obj junk.Junk) {
 		ingestpubkey(origin, keyobj)
 	}
 	ingestboxes(origin, obj)
-	ingesthandle(origin, obj)
+	ingestPreferredUsername(origin, obj)
 }
 
 func ingestpubkey(origin string, obj junk.Junk) {
@@ -1693,10 +1685,9 @@ func ingestpubkey(origin string, obj junk.Junk) {
 		obj = keyobj
 	}
 	keyname, ok := obj.GetString("id")
-	var data string
-	row := stmtGetXonker.QueryRow(keyname, "pubkey")
-	err := row.Scan(&data)
-	if err == nil {
+
+	var pubkey string
+	if err := stmtActorGetPubkey.QueryRow(keyname).Scan(&pubkey); err == nil {
 		return
 	}
 	if !ok || origin != originate(keyname) {
@@ -1709,7 +1700,7 @@ func ingestpubkey(origin string, obj junk.Junk) {
 		ilog.Printf("error finding %s pubkey owner", keyname)
 		return
 	}
-	data, ok = obj.GetString("publicKeyPem")
+	data, ok := obj.GetString("publicKeyPem")
 	if !ok {
 		ilog.Printf("error finding %s pubkey", keyname)
 		return
@@ -1718,14 +1709,13 @@ func ingestpubkey(origin string, obj junk.Junk) {
 		ilog.Printf("bad key owner: %s <> %s", owner, origin)
 		return
 	}
-	_, _, err = httpsig.DecodeKey(data)
+	_, _, err := httpsig.DecodeKey(data)
 	if err != nil {
 		ilog.Printf("error decoding %s pubkey: %s", keyname, err)
 		return
 	}
 	when := time.Now().UTC().Format(dbtimeformat)
-	_, err = stmtSaveXonker.Exec(keyname, data, "pubkey", when)
-	if err != nil {
+	if _, err := stmtActorSetPubkey.Exec(keyname, data, when); err != nil {
 		elog.Printf("error saving key: %s", err)
 	}
 }
@@ -1738,10 +1728,8 @@ func ingestboxes(origin string, obj junk.Junk) {
 	if originate(ident) != origin {
 		return
 	}
-	var info string
-	row := stmtGetXonker.QueryRow(ident, "boxes")
-	err := row.Scan(&info)
-	if err == nil {
+	var countBoxes int
+	if err := stmtActorHasBoxes.QueryRow(ident, "boxes").Scan(&countBoxes); err == nil && countBoxes == 1 {
 		return
 	}
 	dlog.Printf("ingesting boxes: %s", ident)
@@ -1750,15 +1738,13 @@ func ingestboxes(origin string, obj junk.Junk) {
 	sbox, _ := obj.GetString("endpoints", "sharedInbox")
 	if inbox != "" {
 		when := time.Now().UTC().Format(dbtimeformat)
-		m := strings.Join([]string{inbox, outbox, sbox}, " ")
-		_, err = stmtSaveXonker.Exec(ident, m, "boxes", when)
-		if err != nil {
+		if _, err := stmtActorSetBoxes.Exec(ident, when, inbox, outbox, sbox); err != nil {
 			elog.Printf("error saving boxes: %s", err)
 		}
 	}
 }
 
-func ingesthandle(origin string, obj junk.Junk) {
+func ingestPreferredUsername(origin string, obj junk.Junk) {
 	xid, _ := obj.GetString("id")
 	if xid == "" {
 		return
@@ -1766,18 +1752,14 @@ func ingesthandle(origin string, obj junk.Junk) {
 	if originate(xid) != origin {
 		return
 	}
-	var handle string
-	row := stmtGetXonker.QueryRow(xid, "handle")
-	err := row.Scan(&handle)
-	if err == nil {
+	var preferredUsername string
+	if err := stmtPreferredUsernameGet.QueryRow(xid).Scan(&preferredUsername); err == nil {
 		return
 	}
-	handle, _ = obj.GetString("preferredUsername")
-	if handle != "" {
-		when := time.Now().UTC().Format(dbtimeformat)
-		_, err = stmtSaveXonker.Exec(xid, handle, "handle", when)
-		if err != nil {
-			elog.Printf("error saving handle: %s", err)
+	preferredUsername, _ = obj.GetString("preferredUsername")
+	if preferredUsername != "" {
+		if _, err := stmtPreferredUsernameSet.Exec(xid, preferredUsername); err != nil {
+			elog.Printf("error saving preferred username: %s", err)
 		}
 	}
 }

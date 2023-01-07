@@ -952,17 +952,6 @@ func encodeJson(what interface{}) (string, error) {
 	return buf.String(), err
 }
 
-func getxonker(what, flav string) string {
-	var res string
-	row := stmtGetXonker.QueryRow(what, flav)
-	row.Scan(&res)
-	return res
-}
-
-func savexonker(what, value, flav, when string) {
-	stmtSaveXonker.Exec(what, value, flav, when)
-}
-
 func savehonker(user *UserProfile, url, name, flavor, combos, mj string) error {
 	var owner string
 	if url[0] == '#' {
@@ -1087,7 +1076,7 @@ var stmtFindFile, stmtGetFileData, stmtSaveFileData, stmtSaveFile *sql.Stmt
 var stmtCheckFileData *sql.Stmt
 var stmtAddResubmission, stmtGetResubmissions, stmtLoadResubmission, stmtDeleteResubmission, stmtOneHonker *sql.Stmt
 var stmtUntagged, stmtDeleteHonk, stmtDeleteAttachments, stmtDeleteOnts, stmtSaveAction *sql.Stmt
-var stmtGetActions, stmtRecentHonkers, stmtGetXonker, stmtSaveXonker, stmtDeleteXonker, stmtDeleteOldXonkers *sql.Stmt
+var stmtGetActions, stmtRecentHonkers *sql.Stmt
 var stmtAllOnts, stmtSaveOnt, stmtUpdateFlags, stmtClearFlags *sql.Stmt
 var stmtHonksForUserFirstClass *sql.Stmt
 var stmtSaveMeta, stmtDeleteAllMeta, stmtDeleteOneMeta, stmtDeleteSomeMeta, stmtUpdateHonk *sql.Stmt
@@ -1095,6 +1084,11 @@ var stmtHonksISaved, stmtGetFilters, stmtSaveFilter, stmtDeleteFilter *sql.Stmt
 var stmtGetTracks *sql.Stmt
 var stmtSaveChatMessage, stmtLoadChatMessages, stmtGetChats *sql.Stmt
 var stmtGetTopDubbed *sql.Stmt
+
+var stmtActorSetBoxes, stmtActorHasBoxes, stmtActorGetBoxes, stmtActorDeleteBoxes *sql.Stmt
+var stmtActorSetPubkey, stmtActorGetPubkey, stmtActorDeleteOldPubkey, stmtDeleteOldPubkeys *sql.Stmt
+var stmtFriendlyNameSetHref, stmtFriendlyNameGetHref *sql.Stmt
+var stmtPreferredUsernameSet, stmtPreferredUsernameGet *sql.Stmt
 
 func sqlMustPrepare(db *sql.DB, s string) *sql.Stmt {
 	stmt, err := db.Prepare(s)
@@ -1165,10 +1159,6 @@ func prepareStatements(db *sql.DB) {
 	stmtFindZonk = sqlMustPrepare(db, "select actionID from actions where userid = ? and object = ? and action = 'zonk'")
 	stmtGetActions = sqlMustPrepare(db, "select actionID, object, action from actions where userid = ? and action <> 'zonk'")
 	stmtSaveAction = sqlMustPrepare(db, "insert into actions (userid, object, action) values (?, ?, ?)")
-	stmtGetXonker = sqlMustPrepare(db, "select info from xonkers where name = ? and flavor = ?")
-	stmtSaveXonker = sqlMustPrepare(db, "insert into xonkers (name, info, flavor, dt) values (?, ?, ?, ?)")
-	stmtDeleteXonker = sqlMustPrepare(db, "delete from xonkers where name = ? and flavor = ? and dt < ?")
-	stmtDeleteOldXonkers = sqlMustPrepare(db, "delete from xonkers where flavor = ? and dt < ?")
 	stmtRecentHonkers = sqlMustPrepare(db, "select distinct(honker) from honks where userid = ? and honker not in (select xid from honkers where userid = ? and flavor = 'sub') order by honkid desc limit 100")
 	stmtUpdateFlags = sqlMustPrepare(db, "update honks set flags = flags | ? where honkid = ?")
 	stmtClearFlags = sqlMustPrepare(db, "update honks set flags = flags & ~ ? where honkid = ?")
@@ -1181,4 +1171,20 @@ func prepareStatements(db *sql.DB) {
 	stmtLoadChatMessages = sqlMustPrepare(db, "select chatMessageId, userid, xid, who, target, dt, text, format from chatMessages where userid = ? and dt > ? order by chatMessageId asc")
 	stmtGetChats = sqlMustPrepare(db, "select distinct(target) from chatMessages where userid = ?")
 	stmtGetTopDubbed = sqlMustPrepare(db, `SELECT COUNT(*) as c,userid FROM honkers WHERE flavor = "dub" GROUP BY userid`)
+
+	stmtActorSetBoxes = sqlMustPrepare(db, "insert into actorBoxes (ident, inbox, outbox, sharedInbox) values (?, ?, ?, ?)")
+	stmtActorHasBoxes = sqlMustPrepare(db, "select COUNT(*) from actorBoxes where ident = ?")
+	stmtActorGetBoxes = sqlMustPrepare(db, "select inbox, outbox, sharedInbox from actorBoxes where ident = ?")
+	stmtActorDeleteBoxes = sqlMustPrepare(db, "delete from actorBoxes where ident = ?")
+
+	stmtActorSetPubkey = sqlMustPrepare(db, "insert into actorPubKeys (ident, insertDate, pubKey) values (?, ?, ?)")
+	stmtActorGetPubkey = sqlMustPrepare(db, "SELECT pubKey FROM actorPubKeys WHERE ident = ?")
+	stmtActorDeleteOldPubkey = sqlMustPrepare(db, "DELETE FROM actorPubKeys WHERE ident = ? AND dt < ?")
+	stmtDeleteOldPubkeys = sqlMustPrepare(db, "DELETE FROM actorPubKeys WHERE dt < ?")
+
+	stmtFriendlyNameGetHref = sqlMustPrepare(db, "SELECT href FROM friendlyNames WHERE ident = ?")
+	stmtFriendlyNameSetHref = sqlMustPrepare(db, "INSERT INTO friendlyNames (ident, href) VALUES (?, ?)")
+
+	stmtPreferredUsernameSet = sqlMustPrepare(db, "INSERT INTO preferredUsernames (ident, username) VALUES (?, ?)")
+	stmtPreferredUsernameGet = sqlMustPrepare(db, "SELECT username FROM preferredUsernames WHERE ident = ?")
 }

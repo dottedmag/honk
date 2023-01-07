@@ -549,22 +549,23 @@ func originate(u string) string {
 }
 
 var allhandles = cache.New(cache.Options{Filler: func(xid string) (string, bool) {
-	handle := getxonker(xid, "handle")
-	if handle == "" {
-		dlog.Printf("need to get a handle: %s", xid)
-		info, err := investigate(xid)
-		if err != nil {
-			m := re_unurl.FindStringSubmatch(xid)
-			if len(m) > 2 {
-				handle = m[2]
-			} else {
-				handle = xid
-			}
-		} else {
-			handle = info.Name
-		}
+	var preferredUsername string
+	// FIXME: error is ignored?
+	stmtPreferredUsernameGet.QueryRow(xid).Scan(&preferredUsername)
+	if preferredUsername != "" {
+		return preferredUsername, true
 	}
-	return handle, true
+
+	dlog.Printf("need to get a handle: %s", xid)
+	info, err := investigate(xid)
+	if err != nil {
+		m := re_unurl.FindStringSubmatch(xid)
+		if len(m) > 2 {
+			return m[2], true
+		}
+		return xid, true
+	}
+	return info.Name, true
 }})
 
 // handle, handle@host
@@ -634,22 +635,26 @@ func getPrivateKey(userid int64) *KeyInfo {
 }
 
 var zaggies = cache.New(cache.Options{Filler: func(keyname string) (httpsig.PublicKey, bool) {
-	data := getxonker(keyname, "pubkey")
+	var data string
+	// FIXME: error is ignored?
+	stmtActorGetPubkey.QueryRow(keyname).Scan(&data)
 	if data == "" {
 		dlog.Printf("hitting the webs for missing pubkey: %s", keyname)
 		j, err := getAndParseLongTimeout(serverUID, keyname)
 		if err != nil {
 			ilog.Printf("error getting %s pubkey: %s", keyname, err)
 			when := time.Now().UTC().Format(dbtimeformat)
-			stmtSaveXonker.Exec(keyname, "failed", "pubkey", when)
+			// FIXME: error is ignored?
+			stmtActorSetPubkey.Exec(keyname, "failed", when)
 			return httpsig.PublicKey{}, true
 		}
 		allinjest(originate(keyname), j)
-		data = getxonker(keyname, "pubkey")
+		// FIXME: error is ignored?
+		stmtActorGetPubkey.QueryRow(keyname).Scan(&data)
 		if data == "" {
 			ilog.Printf("key not found after ingesting")
 			when := time.Now().UTC().Format(dbtimeformat)
-			stmtSaveXonker.Exec(keyname, "failed", "pubkey", when)
+			stmtActorSetPubkey.Exec(keyname, "failed", when)
 			return httpsig.PublicKey{}, true
 		}
 	}
@@ -673,7 +678,8 @@ func getPubKey(keyname string) (httpsig.PublicKey, error) {
 
 func removeOldPubkey(keyname string) {
 	when := time.Now().Add(-30 * time.Minute).UTC().Format(dbtimeformat)
-	stmtDeleteXonker.Exec(keyname, "pubkey", when)
+	// FIXME: error is ignored?
+	stmtActorDeleteOldPubkey.Exec(keyname, when)
 	zaggies.Clear(keyname)
 }
 

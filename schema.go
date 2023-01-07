@@ -96,14 +96,28 @@ create table honkers (
 );
 create index idx_honkerxid on honkers(xid);
 
-create table xonkers (
-  xonkerid integer primary key,
-  name text,
-  info text,
-  flavor text,
-  dt text
+CREATE TABLE actorBoxes (
+  ident TEXT PRIMARY KEY,
+  inbox TEXT,
+  outbox TEXT,
+  sharedInbox TEXT
 );
-create index idx_xonkername on xonkers(name);
+
+CREATE TABLE actorPubKeys (
+  ident TEXT PRIMARY KEY,
+  insertDate TEXT,
+  pubKey TEXT
+);
+
+CREATE TABLE friendlyNames (
+  ident TEXT PRIMARY KEY,
+  href TEXT
+);
+
+CREATE TABLE preferredUsernames (
+  ident TEXT PRIMARY KEY,
+  username TEXT
+);
 
 create table actions (
   actionID integer primary key,
