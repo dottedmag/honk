@@ -304,13 +304,22 @@ func saveAttachment(url string, name, desc, media string, localize bool) *Attach
 		}
 	}
 saveit:
-	fileid, err := savefile(name, desc, url, media, localize, data)
+	var xid string
+	if localize {
+		var err error
+		xid, err = saveFileBody(media, data)
+		if err != nil {
+			elog.Printf("error saving file %s body: %s", url, err)
+			return nil
+		}
+	}
+	fileID, err := saveFileMetadata(xid, name, desc, url, media)
 	if err != nil {
 		elog.Printf("error saving file %s: %s", url, err)
 		return nil
 	}
 	attachment := new(Attachment)
-	attachment.FileID = fileid
+	attachment.FileID = fileID
 	return attachment
 }
 

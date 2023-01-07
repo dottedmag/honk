@@ -165,13 +165,18 @@ func importMastotoots(user *UserProfile, source string) {
 				name := att.Name
 				desc := name
 				newurl := fmt.Sprintf("https://%s/d/%s", serverName, u)
-				fileid, err := savefile(name, desc, newurl, att.MediaType, true, data)
+				xid, err := saveFileBody(att.MediaType, data)
+				if err != nil {
+					elog.Printf("error saving media: %s", fname)
+					continue
+				}
+				fileID, err := saveFileMetadata(xid, name, desc, newurl, att.MediaType)
 				if err != nil {
 					elog.Printf("error saving media: %s", fname)
 					continue
 				}
 				attachment := &Attachment{
-					FileID: fileid,
+					FileID: fileID,
 				}
 				honk.Attachments = append(honk.Attachments, attachment)
 			}
@@ -444,13 +449,18 @@ func importTwitter(username, source string) {
 			}
 			newurl := fmt.Sprintf("https://%s/d/%s", serverName, u)
 
-			fileid, err := savefile(u, u, newurl, "image/jpg", true, data)
+			xid, err := saveFileBody("image/jpg", data)
+			if err != nil {
+				elog.Printf("error saving media: %s", fname)
+				continue
+			}
+			fileID, err := saveFileMetadata(xid, u, u, newurl, "image/jpg")
 			if err != nil {
 				elog.Printf("error saving media: %s", fname)
 				continue
 			}
 			attachment := &Attachment{
-				FileID: fileid,
+				FileID: fileID,
 			}
 			honk.Attachments = append(honk.Attachments, attachment)
 			text = strings.Replace(text, m.URL, "", -1)

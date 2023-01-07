@@ -1537,14 +1537,21 @@ func submitAttachment(w http.ResponseWriter, r *http.Request) (*Attachment, erro
 	if desc == "" {
 		desc = name
 	}
-	fileid, xid, err := savefileandxid(name, desc, "", media, true, data)
+	xid, err := saveFileBody(media, data)
+	if err != nil {
+		elog.Printf("unable to save image: %s", err)
+		http.Error(w, "failed to save attachment", http.StatusUnsupportedMediaType)
+		return nil, err
+	}
+	url := fmt.Sprintf("https://%s/d/%s", serverName, xid)
+	fileID, err := saveFileMetadata(xid, name, desc, url, media)
 	if err != nil {
 		elog.Printf("unable to save image: %s", err)
 		http.Error(w, "failed to save attachment", http.StatusUnsupportedMediaType)
 		return nil, err
 	}
 	d := &Attachment{
-		FileID: fileid,
+		FileID: fileID,
 		XID:    xid,
 		Desc:   desc,
 		Local:  true,

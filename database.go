@@ -531,54 +531,47 @@ func attachmentsForChatMessages(chatMessages []*ChatMessage) {
 	}
 }
 
-func savefile(name string, desc string, url string, media string, local bool, data []byte) (int64, error) {
-	fileid, _, err := savefileandxid(name, desc, url, media, local, data)
-	return fileid, err
-}
-
 func hashfiledata(data []byte) string {
 	h := sha512.New512_256()
 	h.Write(data)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func savefileandxid(name string, desc string, url string, media string, local bool, data []byte) (int64, string, error) {
+func saveFileBody(media string, data []byte) (string, error) {
 	var xid string
-	if local {
-		hash := hashfiledata(data)
-		row := stmtCheckFileData.QueryRow(hash)
-		err := row.Scan(&xid)
-		if err == sql.ErrNoRows {
-			xid = make18CharRandomString()
-			switch media {
-			case "image/png":
-				xid += ".png"
-			case "image/jpeg":
-				xid += ".jpg"
-			case "application/pdf":
-				xid += ".pdf"
-			case "text/plain":
-				xid += ".txt"
-			}
-			_, err = stmtSaveFileData.Exec(xid, media, hash, data)
-			if err != nil {
-				return 0, "", err
-			}
-		} else if err != nil {
-			elog.Printf("error checking file hash: %s", err)
-			return 0, "", err
-		}
-		if url == "" {
-			url = fmt.Sprintf("https://%s/d/%s", serverName, xid)
-		}
-	}
 
-	res, err := stmtSaveFile.Exec(xid, name, desc, url, media, local)
-	if err != nil {
-		return 0, "", err
+	hash := hashfiledata(data)
+	row := stmtCheckFileData.QueryRow(hash)
+	if err := row.Scan(&xid); err == sql.ErrNoRows {
+		xid = make18CharRandomString()
+		switch media {
+		case "image/png":
+			xid += ".png"
+		case "image/jpeg":
+			xid += ".jpg"
+		case "application/pdf":
+			xid += ".pdf"
+		case "text/plain":
+			xid += ".txt"
+		}
+		if _, err := stmtSaveFileData.Exec(xid, media, hash, data); err != nil {
+			return "", err
+		}
+	} else if err != nil {
+		elog.Printf("error checking file hash: %s", err)
+		return "", err
 	}
-	fileid, _ := res.LastInsertId()
-	return fileid, xid, nil
+	return xid, nil
+}
+
+func saveFileMetadata(xid, name, desc, url, media string) (retFileID int64, retErr error) {
+	haveLocalCopy := xid != ""
+	res, err := stmtSaveFile.Exec(xid, name, desc, url, media, haveLocalCopy)
+	if err != nil {
+		return 0, err
+	}
+	fileID, _ := res.LastInsertId()
+	return fileID, nil
 }
 
 func findAttachment(url string) *Attachment {
@@ -743,7 +736,7 @@ func loadChat(userid int64) []*Chat {
 	var chat []*Chat
 	for target, chatMessages := range chatMessages {
 		chat = append(chat, &Chat{
-			Target: target,
+			Target:       target,
 			ChatMessages: chatMessages,
 		})
 	}
