@@ -603,7 +603,7 @@ var oldoutbox = cache.New(cache.Options{Filler: func(name string) ([]byte, bool)
 		honks = honks[0:20]
 	}
 
-	var jonks []junk.Junk
+	var jonks []tj.O
 	for _, h := range honks {
 		j, _ := jonkjonk(user, h)
 		jonks = append(jonks, j)

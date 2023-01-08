@@ -1110,32 +1110,33 @@ func subsub(user *UserProfile, xid string, owner string, folxid string) {
 	deliverate(0, user.ID, owner, j.ToBytes(), true)
 }
 
-func activateAttachments(attachments []*Attachment) []junk.Junk {
-	var atts []junk.Junk
+func activateAttachments(attachments []*Attachment) []tj.O {
+	var atts []tj.O
 	for _, d := range attachments {
 		if re_emus.MatchString(d.Name) {
 			continue
 		}
-		jd := junk.New()
-		jd["mediaType"] = d.Media
-		jd["name"] = d.Name
-		jd["summary"] = html.EscapeString(d.Desc)
-		jd["type"] = "Document"
-		jd["url"] = d.URL
-		atts = append(atts, jd)
+		atts = append(atts, tj.O{
+			"mediaType": d.Media,
+			"name":      d.Name,
+			"summary":   html.EscapeString(d.Desc),
+			"type":      "Document",
+			"url":       d.URL,
+		})
 	}
 	return atts
 }
 
 // returns activity, object
-func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) {
+func jonkjonk(user *UserProfile, h *ActivityPubActivity) (tj.O, tj.O) {
 	dt := h.Date.Format(time.RFC3339)
-	var jo junk.Junk
-	j := junk.New()
-	j["id"] = user.URL + "/" + h.What + "/" + shortxid(h.XID)
-	j["actor"] = user.URL
-	j["published"] = dt
-	j["to"] = h.Audience[0]
+	jo := tj.O{}
+	j := tj.O{
+		"id":        user.URL + "/" + h.What + "/" + shortxid(h.XID),
+		"actor":     user.URL,
+		"published": dt,
+		"to":        h.Audience[0],
+	}
 	if len(h.Audience) > 1 {
 		j["cc"] = h.Audience[1:]
 	}
@@ -1143,9 +1144,13 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 	switch h.What {
 	case "update", "tonk", "event", "honk":
 		j["type"] = "Create"
-		jo = junk.New()
-		jo["id"] = h.XID
-		jo["type"] = "Note"
+		jo = tj.O{
+			"id":           h.XID,
+			"type":         "Note",
+			"published":    dt,
+			"url":          h.XID,
+			"attributedTo": user.URL,
+		}
 		if h.What == "event" {
 			jo["type"] = "Event"
 		}
@@ -1153,9 +1158,6 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 			j["type"] = "Update"
 			jo["updated"] = dt
 		}
-		jo["published"] = dt
-		jo["url"] = h.XID
-		jo["attributedTo"] = user.URL
 		if h.InReplyToID != "" {
 			jo["inReplyTo"] = h.InReplyToID
 		}
@@ -1181,59 +1183,60 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 			replies = append(replies, reply.XID)
 		}
 		if len(replies) > 0 {
-			jr := junk.New()
-			jr["type"] = "Collection"
-			jr["totalItems"] = len(replies)
-			jr["items"] = replies
-			jo["replies"] = jr
+			jo["replies"] = tj.O{
+				"type":       "Collection",
+				"totalItems": len(replies),
+				"items":      replies,
+			}
 		}
 
-		var tags []junk.Junk
+		var tags []tj.O
 		for _, m := range h.Mentions {
-			t := junk.New()
-			t["type"] = "Mention"
-			t["name"] = m.Who
-			t["href"] = m.Where
-			tags = append(tags, t)
+			tags = append(tags, tj.O{
+				"type": "Mention",
+				"name": m.Who,
+				"href": m.Where,
+			})
 		}
 		for _, h := range h.Hashtags {
-			t := junk.New()
-			t["type"] = "Hashtag"
 			h = strings.ToLower(h)
-			t["href"] = fmt.Sprintf("https://%s/o/%s", serverName, h[1:])
-			t["name"] = h
-			tags = append(tags, t)
+			tags = append(tags, tj.O{
+				"type": "Hashtag",
+				"name": h,
+				"href": fmt.Sprintf("https://%s/o/%s", serverName, h[1:]),
+			})
 		}
 		for _, e := range herdofemus(h.Text) {
-			t := junk.New()
-			t["id"] = e.ID
-			t["type"] = "Emoji"
-			t["name"] = e.Name
-			i := junk.New()
-			i["type"] = "Image"
-			i["mediaType"] = e.Type
-			i["url"] = e.ID
-			t["icon"] = i
-			tags = append(tags, t)
+			tags = append(tags, tj.O{
+				"id":   e.ID,
+				"type": "Emoji",
+				"name": e.Name,
+				"icon": tj.O{
+					"type":      "Image",
+					"mediaType": e.Type,
+					"url":       e.ID,
+				},
+			})
 		}
 		for _, e := range fixupflags(h) {
-			t := junk.New()
-			t["id"] = e.ID
-			t["type"] = "Emoji"
-			t["name"] = e.Name
-			i := junk.New()
-			i["type"] = "Image"
-			i["mediaType"] = "image/png"
-			i["url"] = e.ID
-			t["icon"] = i
-			tags = append(tags, t)
+			tags = append(tags, tj.O{
+				"id":   e.ID,
+				"type": "Emoji",
+				"name": e.Name,
+				"icon": tj.O{
+					"type":      "Image",
+					"mediaType": "image/png",
+					"url":       e.ID,
+				},
+			})
 		}
 		if len(tags) > 0 {
 			jo["tag"] = tags
 		}
 		if p := h.Place; p != nil {
-			t := junk.New()
-			t["type"] = "Place"
+			t := tj.O{
+				"type": "Place",
+			}
 			if p.Name != "" {
 				t["name"] = p.Name
 			}
@@ -1268,14 +1271,15 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		}
 		j["object"] = h.XID
 	case "unshare":
-		b := junk.New()
-		b["id"] = user.URL + "/" + "share" + "/" + shortxid(h.XID)
-		b["type"] = "Announce"
-		b["actor"] = user.URL
+		b := tj.O{
+			"id":     user.URL + "/" + "share" + "/" + shortxid(h.XID),
+			"type":   "Announce",
+			"actor":  user.URL,
+			"object": h.XID,
+		}
 		if h.Thread != "" {
 			b["context"] = h.Thread
 		}
-		b["object"] = h.XID
 		j["type"] = "Undo"
 		j["object"] = b
 	case "zonk":
@@ -1295,11 +1299,12 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 		}
 		j["content"] = h.Text
 	case "deack":
-		b := junk.New()
-		b["id"] = user.URL + "/" + "ack" + "/" + shortxid(h.XID)
-		b["type"] = "Read"
-		b["actor"] = user.URL
-		b["object"] = h.XID
+		b := tj.O{
+			"id":     user.URL + "/" + "ack" + "/" + shortxid(h.XID),
+			"type":   "Read",
+			"actor":  user.URL,
+			"object": h.XID,
+		}
 		if h.Thread != "" {
 			b["context"] = h.Thread
 		}
@@ -1328,7 +1333,7 @@ var oldjonks = cache.New(cache.Options{Filler: func(xid string) ([]byte, bool) {
 	_, j := jonkjonk(user, honk)
 	j["@context"] = atContextString
 
-	return j.ToBytes(), true
+	return must.OK1(json.Marshal(j)), true
 }, Limit: 128})
 
 func gimmejonk(xid string) ([]byte, bool) {
@@ -1415,7 +1420,7 @@ func sendChatMessage(user *UserProfile, ch *ChatMessage) {
 func honkworldwide(user *UserProfile, honk *ActivityPubActivity) {
 	jonk, _ := jonkjonk(user, honk)
 	jonk["@context"] = atContextString
-	msg := jonk.ToBytes()
+	msg := must.OK1(json.Marshal(jonk))
 
 	rcpts := boxuprcpts(user, honk.Audience, honk.Public)
 
