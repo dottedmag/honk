@@ -521,8 +521,9 @@ func serveractor(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	j := junkuser(user)
-	j.Write(w)
+	j := serializeUser(user)
+	// FIXME errors ignored?
+	json.NewEncoder(w).Encode(j)
 }
 
 func ximport(w http.ResponseWriter, r *http.Request) {

@@ -1502,23 +1502,24 @@ func collectiveaction(honk *ActivityPubActivity) {
 	}
 }
 
-func junkuser(user *UserProfile) junk.Junk {
-	j := junk.New()
-	j["@context"] = atContextString
-	j["id"] = user.URL
-	j["inbox"] = user.URL + "/inbox"
-	j["outbox"] = user.URL + "/outbox"
-	j["name"] = user.Display
-	j["preferredUsername"] = user.Name
-	j["summary"] = user.HTAbout
-	var tags []junk.Junk
+func serializeUser(user *UserProfile) tj.O {
+	j := tj.O{
+		"@context":          atContextString,
+		"id":                user.URL,
+		"inbox":             user.URL + "/inbox",
+		"outbox":            user.URL + "/outbox",
+		"name":              user.Display,
+		"preferredUsername": user.Name,
+		"summary":           user.HTAbout,
+	}
+	var tags []tj.O
 	for _, h := range user.Hashtags {
-		t := junk.New()
-		t["type"] = "Hashtag"
 		h = strings.ToLower(h)
-		t["href"] = fmt.Sprintf("https://%s/o/%s", serverName, h[1:])
-		t["name"] = h
-		tags = append(tags, t)
+		tags = append(tags, tj.O{
+			"type": "Hashtag",
+			"href": fmt.Sprintf("https://%s/o/%s", serverName, h[1:]),
+			"name": h,
+		})
 	}
 	if len(tags) > 0 {
 		j["tag"] = tags
@@ -1529,9 +1530,10 @@ func junkuser(user *UserProfile) junk.Junk {
 		j["url"] = user.URL
 		j["followers"] = user.URL + "/followers"
 		j["following"] = user.URL + "/following"
-		a := junk.New()
-		a["type"] = "Image"
-		a["mediaType"] = "image/png"
+		a := tj.O{
+			"type":      "Image",
+			"mediaType": "image/png",
+		}
 		if ava := user.Options.Avatar; ava != "" {
 			a["url"] = ava
 		} else {
@@ -1543,20 +1545,21 @@ func junkuser(user *UserProfile) junk.Junk {
 		}
 		j["icon"] = a
 		if ban := user.Options.Banner; ban != "" {
-			a := junk.New()
-			a["type"] = "Image"
-			a["mediaType"] = "image/jpg"
-			a["url"] = ban
-			j["image"] = a
+			j["image"] = tj.O{
+				"type":      "Image",
+				"mediaType": "image/jpg",
+				"url":       ban,
+			}
+
 		}
 	} else {
 		j["type"] = "Service"
 	}
-	k := junk.New()
-	k["id"] = user.URL + "#key"
-	k["owner"] = user.URL
-	k["publicKeyPem"] = user.Key
-	j["publicKey"] = k
+	j["publicKey"] = tj.O{
+		"id":           user.URL + "#key",
+		"owner":        user.URL,
+		"publicKeyPem": user.Key,
+	}
 
 	return j
 }
@@ -1566,10 +1569,8 @@ var userBioAsJSONCache = cache.New(cache.Options{Filler: func(name string) ([]by
 	if err != nil {
 		return nil, false
 	}
-	var buf bytes.Buffer
-	j := junkuser(user)
-	j.Write(&buf)
-	return buf.Bytes(), true
+	j := serializeUser(user)
+	return must.OK1(json.Marshal(j)), true
 }, Duration: 1 * time.Minute})
 
 func userBioAsJSON(name string) ([]byte, bool) {
@@ -1773,16 +1774,17 @@ func updateMe(username string) {
 	var user *UserProfile
 	usersCacheByName.Get(username, &user)
 	dt := time.Now().UTC().Format(time.RFC3339)
-	j := junk.New()
-	j["@context"] = atContextString
-	j["id"] = fmt.Sprintf("%s/upme/%s/%d", user.URL, user.Name, time.Now().Unix())
-	j["actor"] = user.URL
-	j["published"] = dt
-	j["to"] = activitystreamsPublicString
-	j["type"] = "Update"
-	j["object"] = junkuser(user)
+	j := tj.O{
+		"@context":  atContextString,
+		"id":        fmt.Sprintf("%s/upme/%s/%d", user.URL, user.Name, time.Now().Unix()),
+		"actor":     user.URL,
+		"published": dt,
+		"to":        activitystreamsPublicString,
+		"type":      "Update",
+		"object":    serializeUser(user),
+	}
 
-	msg := j.ToBytes()
+	msg := must.OK1(json.Marshal(j))
 
 	rcpts := make(map[string]bool)
 	for _, f := range getdubs(user.ID) {
