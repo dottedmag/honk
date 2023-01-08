@@ -136,12 +136,13 @@ create table resubmissions(
   msg blob
 );
 
-create table onts (
-  ontology text,
+
+create table hashtags (
+  tag text,
   honkid integer
 );
-create index idx_ontology on onts(ontology);
-create index idx_onthonkid on onts(honkid);
+create index idx_hashtags on hashtags(tag);
+create index idx_hashtagshonkid on hashtags(honkid);
 
 create table honkmeta (
   honkid integer,

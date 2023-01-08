@@ -38,16 +38,16 @@ func init() {
 }
 
 type UserProfile struct {
-	ID      int64
-	Name    string
-	Display string
-	About   string
-	HTAbout template.HTML
-	Onts    []string
-	Key     string
-	URL     string
-	Options UserOptions
-	SecKey  httpsig.PrivateKey
+	ID       int64
+	Name     string
+	Display  string
+	About    string
+	HTAbout  template.HTML
+	Hashtags []string
+	Key      string
+	URL      string
+	Options  UserOptions
+	SecKey   httpsig.PrivateKey
 }
 
 type UserOptions struct {
@@ -99,7 +99,7 @@ type ActivityPubActivity struct {
 	Style       string
 	Open        string
 	Attachments []*Attachment
-	Onts        []string
+	Hashtags    []string
 	Place       *Place
 	Time        *Time
 	Mentions    []Mention

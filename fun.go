@@ -307,7 +307,7 @@ func translate(honk *ActivityPubActivity) {
 	text = strings.TrimSpace(text)
 	text = marker.Mark(text)
 	honk.Text = text
-	honk.Onts = stringArrayTrimUntilDupe(marker.HashTags)
+	honk.Hashtags = stringArrayTrimUntilDupe(marker.HashTags)
 	honk.Mentions = bunchofgrapes(marker.Mentions)
 }
 

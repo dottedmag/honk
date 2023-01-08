@@ -472,7 +472,7 @@ func serverinbox(w http.ResponseWriter, r *http.Request) {
 	if rejectactor(user.ID, who) {
 		return
 	}
-	re_ont := regexp.MustCompile("https://" + serverName + "/o/([\\pL[:digit:]]+)")
+	re_hashtag := regexp.MustCompile("https://" + serverName + "/o/([\\pL[:digit:]]+)")
 	what, _ := j.GetString("type")
 	dlog.Printf("server got a %s", what)
 	switch what {
@@ -482,14 +482,14 @@ func serverinbox(w http.ResponseWriter, r *http.Request) {
 			ilog.Printf("can't follow the server!")
 			return
 		}
-		m := re_ont.FindStringSubmatch(obj)
+		m := re_hashtag.FindStringSubmatch(obj)
 		if len(m) != 2 {
 			ilog.Printf("not sure how to handle this")
 			return
 		}
-		ont := "#" + m[1]
+		hashtag := "#" + m[1]
 
-		followme(user, who, ont, j)
+		followme(user, who, hashtag, j)
 	case "Undo":
 		obj, ok := j.GetMap("object")
 		if !ok {
@@ -502,13 +502,13 @@ func serverinbox(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		targ, _ := obj.GetString("object")
-		m := re_ont.FindStringSubmatch(targ)
+		m := re_hashtag.FindStringSubmatch(targ)
 		if len(m) != 2 {
 			ilog.Printf("not sure how to handle this")
 			return
 		}
-		ont := "#" + m[1]
-		unfollowme(user, who, ont, j)
+		hashtag := "#" + m[1]
+		unfollowme(user, who, hashtag, j)
 	default:
 		ilog.Printf("unhandled server activity: %s", what)
 		dumpactivity(j)
@@ -785,7 +785,7 @@ func showontology(w http.ResponseWriter, r *http.Request) {
 	if u != nil {
 		userid = u.UserID
 	}
-	honks := gethonksbyontology(userid, "#"+name, 0)
+	honks := getHonksByHashtag(userid, "#"+name, 0)
 	if isActivityStreamsMediaType(r.Header.Get("Accept")) {
 		if len(honks) > 40 {
 			honks = honks[0:40]
@@ -818,7 +818,7 @@ func showontology(w http.ResponseWriter, r *http.Request) {
 	honkpage(w, u, honks, templinfo)
 }
 
-type Ont struct {
+type Hashtag struct {
 	Name  string
 	Count int64
 }
@@ -829,36 +829,36 @@ func thelistingoftheontologies(w http.ResponseWriter, r *http.Request) {
 	if u != nil {
 		userid = u.UserID
 	}
-	rows, err := stmtAllOnts.Query(userid)
+	rows, err := stmtAllHashtags.Query(userid)
 	if err != nil {
 		elog.Printf("selection error: %s", err)
 		return
 	}
 	defer rows.Close()
-	var onts []Ont
+	var hashtags []Hashtag
 	for rows.Next() {
-		var o Ont
-		err := rows.Scan(&o.Name, &o.Count)
+		var h Hashtag
+		err := rows.Scan(&h.Name, &h.Count)
 		if err != nil {
-			elog.Printf("error scanning ont: %s", err)
+			elog.Printf("error scanning hashtag: %s", err)
 			continue
 		}
-		if utf8.RuneCountInString(o.Name) > 24 {
+		if utf8.RuneCountInString(h.Name) > 24 {
 			continue
 		}
-		o.Name = o.Name[1:]
-		onts = append(onts, o)
+		h.Name = h.Name[1:]
+		hashtags = append(hashtags, h)
 	}
-	sort.Slice(onts, func(i, j int) bool {
-		return onts[i].Name < onts[j].Name
+	sort.Slice(hashtags, func(i, j int) bool {
+		return hashtags[i].Name < hashtags[j].Name
 	})
 	if u == nil && !develMode {
 		w.Header().Set("Cache-Control", "max-age=300")
 	}
 	templinfo := getInfo(r)
-	templinfo["Onts"] = onts
+	templinfo["Hashtags"] = hashtags
 	templinfo["FirstRune"] = func(s string) rune { r, _ := utf8.DecodeRuneInString(s); return r }
-	err = readviews.Execute(w, "onts.html", templinfo)
+	err = readviews.Execute(w, "hashtags.html", templinfo)
 	if err != nil {
 		elog.Print(err)
 	}
@@ -1216,7 +1216,7 @@ func doShare(xid string, user *UserProfile) {
 		Public:      true,
 		Format:      xonk.Format,
 		Place:       xonk.Place,
-		Onts:        xonk.Onts,
+		Hashtags:    xonk.Hashtags,
 		Time:        xonk.Time,
 	}
 
@@ -2508,7 +2508,7 @@ func serve() {
 		viewDir+"/views/xzone.html",
 		viewDir+"/views/msg.html",
 		viewDir+"/views/header.html",
-		viewDir+"/views/onts.html",
+		viewDir+"/views/hashtags.html",
 		viewDir+"/views/honkpage.js",
 	)
 	if !develMode {

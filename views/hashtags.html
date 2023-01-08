@@ -5,7 +5,7 @@
     {{ $firstrune := .FirstRune }}
     {{ $letter := 0 }}
     <ul>
-      {{ range .Onts }}
+      {{ range .Hashtags }}
         {{ if not (eq $letter (call $firstrune .Name)) }}
           {{ $letter = (call $firstrune .Name) }}
           <li><p>

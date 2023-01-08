@@ -184,7 +184,7 @@ func importMastotoots(user *UserProfile, source string) {
 		for _, t := range toot.Object.Tag {
 			switch t.Type {
 			case "Hashtag":
-				honk.Onts = append(honk.Onts, t.Name)
+				honk.Hashtags = append(honk.Hashtags, t.Name)
 			}
 		}
 		savehonk(&honk)
@@ -466,7 +466,7 @@ func importTwitter(username, source string) {
 			text = strings.Replace(text, m.URL, "", -1)
 		}
 		for _, ht := range t.Tweet.Entities.Hashtags {
-			honk.Onts = append(honk.Onts, "#"+ht.Text)
+			honk.Hashtags = append(honk.Hashtags, "#"+ht.Text)
 		}
 		honk.Text = text
 		err := savehonk(&honk)

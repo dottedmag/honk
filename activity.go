@@ -900,7 +900,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 						if name[0] != '#' {
 							name = "#" + name
 						}
-						xonk.Onts = append(xonk.Onts, name)
+						xonk.Hashtags = append(xonk.Hashtags, name)
 					}
 				}
 				if tt == "Place" {
@@ -944,7 +944,7 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 				}
 			}
 
-			xonk.Onts = stringArrayTrimUntilDupe(xonk.Onts)
+			xonk.Hashtags = stringArrayTrimUntilDupe(xonk.Hashtags)
 			replyobj, ok := obj.GetMap("replies")
 			if ok {
 				items, ok := replyobj.GetArray("items")
@@ -1196,12 +1196,12 @@ func jonkjonk(user *UserProfile, h *ActivityPubActivity) (junk.Junk, junk.Junk) 
 			t["href"] = m.Where
 			tags = append(tags, t)
 		}
-		for _, o := range h.Onts {
+		for _, h := range h.Hashtags {
 			t := junk.New()
 			t["type"] = "Hashtag"
-			o = strings.ToLower(o)
-			t["href"] = fmt.Sprintf("https://%s/o/%s", serverName, o[1:])
-			t["name"] = o
+			h = strings.ToLower(h)
+			t["href"] = fmt.Sprintf("https://%s/o/%s", serverName, h[1:])
+			t["name"] = h
 			tags = append(tags, t)
 		}
 		for _, e := range herdofemus(h.Text) {
@@ -1449,7 +1449,7 @@ func honkworldwide(user *UserProfile, honk *ActivityPubActivity) {
 	for a := range rcpts {
 		go deliverate(0, user.ID, a, msg, doesitmatter(honk.What))
 	}
-	if honk.Public && len(honk.Onts) > 0 {
+	if honk.Public && len(honk.Hashtags) > 0 {
 		collectiveaction(honk)
 	}
 }
@@ -1468,18 +1468,18 @@ func doesitmatter(what string) bool {
 
 func collectiveaction(honk *ActivityPubActivity) {
 	user := getserveruser()
-	for _, ont := range honk.Onts {
-		dubs := getnameddubs(serverUID, ont)
+	for _, hashtag := range honk.Hashtags {
+		dubs := getnameddubs(serverUID, hashtag)
 		if len(dubs) == 0 {
 			continue
 		}
 		j := junk.New()
 		j["@context"] = atContextString
 		j["type"] = "Add"
-		j["id"] = user.URL + "/add/" + shortxid(ont+honk.XID)
+		j["id"] = user.URL + "/add/" + shortxid(hashtag+honk.XID)
 		j["actor"] = user.URL
 		j["object"] = honk.XID
-		j["target"] = fmt.Sprintf("https://%s/o/%s", serverName, ont[1:])
+		j["target"] = fmt.Sprintf("https://%s/o/%s", serverName, hashtag[1:])
 		rcpts := make(map[string]bool)
 		for _, dub := range dubs {
 			var box *Box
@@ -1507,12 +1507,12 @@ func junkuser(user *UserProfile) junk.Junk {
 	j["preferredUsername"] = user.Name
 	j["summary"] = user.HTAbout
 	var tags []junk.Junk
-	for _, o := range user.Onts {
+	for _, h := range user.Hashtags {
 		t := junk.New()
 		t["type"] = "Hashtag"
-		o = strings.ToLower(o)
-		t["href"] = fmt.Sprintf("https://%s/o/%s", serverName, o[1:])
-		t["name"] = o
+		h = strings.ToLower(h)
+		t["href"] = fmt.Sprintf("https://%s/o/%s", serverName, h[1:])
+		t["name"] = h
 		tags = append(tags, t)
 	}
 	if len(tags) > 0 {

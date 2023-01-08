@@ -72,7 +72,7 @@ var usersCacheByName = cache.New(cache.Options{Filler: func(name string) (*UserP
 	marker.HashLinker = ontoreplacer
 	marker.AtLinker = attoreplacer
 	user.HTAbout = template.HTML(marker.Mark(user.About))
-	user.Onts = marker.HashTags
+	user.Hashtags = marker.HashTags
 	return user, true
 }})
 
@@ -342,8 +342,8 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 	honks := getsomehonks(rows, err)
 	return honks
 }
-func gethonksbyontology(userid int64, name string, wanted int64) []*ActivityPubActivity {
-	rows, err := stmtHonksByOntology.Query(wanted, name, userid, userid)
+func getHonksByHashtag(userid int64, name string, wanted int64) []*ActivityPubActivity {
+	rows, err := stmtHonksByHashtag.Query(wanted, name, userid, userid)
 	honks := getsomehonks(rows, err)
 	return honks
 }
@@ -424,11 +424,11 @@ func attachmentsForHonks(honks []*ActivityPubActivity) {
 	}
 	rows.Close()
 
-	// grab onts
-	q = fmt.Sprintf("select honkid, ontology from onts where honkid in (%s)", idset)
+	// grab hashtags
+	q = fmt.Sprintf("select honkid, hashtag from hashtags where honkid in (%s)", idset)
 	rows, err = db.Query(q)
 	if err != nil {
-		elog.Printf("error querying onts: %s", err)
+		elog.Printf("error querying hashtags: %s", err)
 		return
 	}
 	defer rows.Close()
@@ -441,7 +441,7 @@ func attachmentsForHonks(honks []*ActivityPubActivity) {
 			continue
 		}
 		h := hmap[hid]
-		h.Onts = append(h.Onts, o)
+		h.Hashtags = append(h.Hashtags, o)
 	}
 	rows.Close()
 
@@ -858,10 +858,10 @@ func saveextras(tx *sql.Tx, h *ActivityPubActivity) error {
 			return err
 		}
 	}
-	for _, o := range h.Onts {
-		_, err := tx.Stmt(stmtSaveOnt).Exec(strings.ToLower(o), h.ID)
+	for _, o := range h.Hashtags {
+		_, err := tx.Stmt(stmtSaveHashtag).Exec(strings.ToLower(o), h.ID)
 		if err != nil {
-			elog.Printf("error saving ont: %s", err)
+			elog.Printf("error saving hashtag: %s", err)
 			return err
 		}
 	}
@@ -928,7 +928,7 @@ func deleteextras(tx *sql.Tx, honkid int64, everything bool) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.Stmt(stmtDeleteOnts).Exec(honkid)
+	_, err = tx.Stmt(stmtDeleteHashtags).Exec(honkid)
 	if err != nil {
 		return err
 	}
@@ -1016,7 +1016,7 @@ func cleanupdb(arg string) {
 	}
 	sqlMustQuery(db, "delete from honks where flags & 4 = 0 and whofore = 0 and "+where, sqlargs...)
 	sqlMustQuery(db, "delete from attachments where honkid > 0 and honkid not in (select honkid from honks)")
-	sqlMustQuery(db, "delete from onts where honkid not in (select honkid from honks)")
+	sqlMustQuery(db, "delete from hashtags where honkid not in (select honkid from honks)")
 	sqlMustQuery(db, "delete from honkmeta where honkid not in (select honkid from honks)")
 
 	sqlMustQuery(db, "delete from filemeta where fileid not in (select fileid from attachments)")
@@ -1068,16 +1068,16 @@ func cleanupdb(arg string) {
 var stmtHonkers, stmtDubbers, stmtNamedDubbers, stmtSaveHonker, stmtUpdateFlavor, stmtUpdateHonker *sql.Stmt
 var stmtDeleteHonker *sql.Stmt
 var stmtAnyXonk, stmtOneActivityPubActivity, stmtPublicHonks, stmtUserHonks, stmtHonksByCombo, stmtHonksByThread *sql.Stmt
-var stmtHonksByOntology, stmtHonksForUser, stmtHonksForMe, stmtSaveDub, stmtHonksByXonker *sql.Stmt
+var stmtHonksByHashtag, stmtHonksForUser, stmtHonksForMe, stmtSaveDub, stmtHonksByXonker *sql.Stmt
 var stmtHonksFromLongAgo *sql.Stmt
 var stmtHonksByHonker, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
 var stmtEventHonks, stmtOneShare, stmtFindZonk, stmtFindXonk, stmtSaveAttachment *sql.Stmt
 var stmtFindFile, stmtGetFileData, stmtSaveFileData, stmtSaveFile *sql.Stmt
 var stmtCheckFileData *sql.Stmt
 var stmtAddResubmission, stmtGetResubmissions, stmtLoadResubmission, stmtDeleteResubmission, stmtOneHonker *sql.Stmt
-var stmtUntagged, stmtDeleteHonk, stmtDeleteAttachments, stmtDeleteOnts, stmtSaveAction *sql.Stmt
+var stmtUntagged, stmtDeleteHonk, stmtDeleteAttachments, stmtDeleteHashtags, stmtSaveAction *sql.Stmt
 var stmtGetActions, stmtRecentHonkers *sql.Stmt
-var stmtAllOnts, stmtSaveOnt, stmtUpdateFlags, stmtClearFlags *sql.Stmt
+var stmtAllHashtags, stmtSaveHashtag, stmtUpdateFlags, stmtClearFlags *sql.Stmt
 var stmtHonksForUserFirstClass *sql.Stmt
 var stmtSaveMeta, stmtDeleteAllMeta, stmtDeleteOneMeta, stmtDeleteSomeMeta, stmtUpdateHonk *sql.Stmt
 var stmtHonksISaved, stmtGetFilters, stmtSaveFilter, stmtDeleteFilter *sql.Stmt
@@ -1126,9 +1126,9 @@ func prepareStatements(db *sql.DB) {
 	stmtHonksISaved = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and flags & 4 order by honks.honkid desc")
 	stmtHonksByHonker = sqlMustPrepare(db, selecthonks+"join honkers on (honkers.xid = honks.honker or honkers.xid = honks.oonker) where honks.honkid > ? and honks.userid = ? and honkers.name = ?"+butnotthose+limit)
 	stmtHonksByXonker = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and (honker = ? or oonker = ?)"+butnotthose+limit)
-	stmtHonksByCombo = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and honks.honker in (select xid from honkers where honkers.userid = ? and honkers.combos like ?) "+butnotthose+" union "+selecthonks+"join onts on honks.honkid = onts.honkid where honks.honkid > ? and honks.userid = ? and onts.ontology in (select xid from honkers where combos like ?)"+butnotthose+limit)
+	stmtHonksByCombo = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and honks.honker in (select xid from honkers where honkers.userid = ? and honkers.combos like ?) "+butnotthose+" union "+selecthonks+"join hashtags on honks.honkid = hashtags.honkid where honks.honkid > ? and honks.userid = ? and hashtags.hashtag in (select xid from honkers where combos like ?)"+butnotthose+limit)
 	stmtHonksByThread = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and (honks.userid = ? or (? = -1 and whofore = 2)) and thread = ?"+limit)
-	stmtHonksByOntology = sqlMustPrepare(db, selecthonks+"join onts on honks.honkid = onts.honkid where honks.honkid > ? and onts.ontology = ? and (honks.userid = ? or (? = -1 and honks.whofore = 2))"+limit)
+	stmtHonksByHashtag = sqlMustPrepare(db, selecthonks+"join hashtags on honks.honkid = hashtags.honkid where honks.honkid > ? and hashtags.hashtag = ? and (honks.userid = ? or (? = -1 and honks.whofore = 2))"+limit)
 
 	stmtSaveMeta = sqlMustPrepare(db, "insert into honkmeta (honkid, genus, json) values (?, ?, ?)")
 	stmtDeleteAllMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ?")
@@ -1137,8 +1137,8 @@ func prepareStatements(db *sql.DB) {
 	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, inReplyToID, dt, url, audience, text, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	stmtDeleteHonk = sqlMustPrepare(db, "delete from honks where honkid = ?")
 	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, text = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
-	stmtSaveOnt = sqlMustPrepare(db, "insert into onts (ontology, honkid) values (?, ?)")
-	stmtDeleteOnts = sqlMustPrepare(db, "delete from onts where honkid = ?")
+	stmtSaveHashtag = sqlMustPrepare(db, "insert into hashtags (hashtag, honkid) values (?, ?)")
+	stmtDeleteHashtags = sqlMustPrepare(db, "delete from hashtags where honkid = ?")
 	stmtSaveAttachment = sqlMustPrepare(db, "insert into attachments (honkid, chatMessageId, fileid) values (?, ?, ?)")
 	stmtDeleteAttachments = sqlMustPrepare(db, "delete from attachments where honkid = ?")
 	stmtSaveFile = sqlMustPrepare(db, "insert into filemeta (xid, name, description, url, media, local) values (?, ?, ?, ?, ?, ?)")
@@ -1162,7 +1162,7 @@ func prepareStatements(db *sql.DB) {
 	stmtRecentHonkers = sqlMustPrepare(db, "select distinct(honker) from honks where userid = ? and honker not in (select xid from honkers where userid = ? and flavor = 'sub') order by honkid desc limit 100")
 	stmtUpdateFlags = sqlMustPrepare(db, "update honks set flags = flags | ? where honkid = ?")
 	stmtClearFlags = sqlMustPrepare(db, "update honks set flags = flags & ~ ? where honkid = ?")
-	stmtAllOnts = sqlMustPrepare(db, "select ontology, count(ontology) from onts join honks on onts.honkid = honks.honkid where (honks.userid = ? or honks.whofore = 2) group by ontology")
+	stmtAllHashtags = sqlMustPrepare(db, "select hashtag, count(hashtag) from hashtags join honks on hashtags.honkid = honks.honkid where (honks.userid = ? or honks.whofore = 2) group by hashtag")
 	stmtGetFilters = sqlMustPrepare(db, "select hfcsid, json from hfcs where userid = ?")
 	stmtSaveFilter = sqlMustPrepare(db, "insert into hfcs (userid, json) values (?, ?)")
 	stmtDeleteFilter = sqlMustPrepare(db, "delete from hfcs where userid = ? and hfcsid = ?")

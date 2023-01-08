@@ -14,7 +14,6 @@
   * imaginate
   * lingo
   * memetize
-  * ont
   * osmosis
   * reverbolate
   * xonk
