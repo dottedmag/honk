@@ -33,7 +33,7 @@ create table honks (
   honkid integer primary key,
   userid integer,
   what text,
-  honker text,
+  author text,
   xid text,
   inReplyToID text,
   dt text,
@@ -49,7 +49,7 @@ create table honks (
 );
 create index idx_honksxid on honks(xid);
 create index idx_honksthread on honks(thread);
-create index idx_honkshonker on honks(honker);
+create index idx_honksauthor on honks(author);
 create index idx_honksoonker on honks(oonker);
 
 create table chatMessages (
@@ -83,8 +83,8 @@ create table filemeta (
 create index idx_filesxid on filemeta(xid);
 create index idx_filesurl on filemeta(url);
 
-create table honkers (
-  honkerid integer primary key,
+create table authors (
+  authorID integer primary key,
   userid integer,
   name text,
   xid text,
@@ -94,7 +94,7 @@ create table honkers (
   meta text,
   folxid text
 );
-create index idx_honkerxid on honkers(xid);
+create index idx_authorsXID on authors(xid);
 
 CREATE TABLE actorBoxes (
   ident TEXT PRIMARY KEY,

@@ -144,7 +144,7 @@ function hydrargs() {
 		args["c"] = arg
 	} else if (name == "combo") {
 		args["c"] = arg
-	} else if (name == "honker") {
+	} else if (name == "author") {
 		args["xid"] = arg
 	} else if (name == "user") {
 		args["uname"] = arg
@@ -259,12 +259,12 @@ function relinklinks() {
 		els[0].onclick = pageswitcher("combo", els[0].text)
 		els[0].classList.remove("combolink")
 	}
-	els = document.getElementsByClassName("honkerlink")
+	els = document.getElementsByClassName("authorlink")
 	while (els.length) {
 		var el = els[0]
 		var xid = el.getAttribute("data-xid")
-		el.onclick = pageswitcher("honker", xid)
-		el.classList.remove("honkerlink")
+		el.onclick = pageswitcher("author", xid)
+		el.classList.remove("authorlink")
 	}
 }
 (function() {

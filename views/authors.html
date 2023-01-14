@@ -2,9 +2,9 @@
 <main>
   <div class="info">
     <p>
-    <form action="/submithonker" method="POST">
-      <h3>add new honker</h3>
-      <input type="hidden" name="CSRF" value="{{ .HonkerCSRF }}">
+    <form action="/submitauthor" method="POST">
+      <h3>add new author</h3>
+      <input type="hidden" name="CSRF" value="{{ .AuthorCSRF }}">
       <p><label for=url>url:</label><br>
       <input tabindex=1 type="text" name="url" value="" autocomplete=off>
       <p><label for=name>name:</label><br>
@@ -16,10 +16,10 @@
       <p><label for="notes">notes:</label><br>
       <textarea tabindex=1 name="notes">
       </textarea>
-      <p><button tabindex=1 name="add honker" value="add honker">add honker</button>
+      <p><button tabindex=1 name="add author" value="add author">add author</button>
     </form>
   </div>
-  {{ $honkercsrf := .HonkerCSRF }}
+  {{ $authorcsrf := .AuthorCSRF }}
   <div class="info">
     <script>
       function expandstuff() {
@@ -31,7 +31,7 @@
     </script>
     <p><button onclick="expandstuff()">expand</button>
   </div>
-  {{ range .Honkers }}
+  {{ range .Authors }}
     <section class="honk">
       <header>
         <img alt="avatar" src="/a?a={{ .XID }}">
@@ -41,9 +41,9 @@
       <details>
         <p>url: <a href="{{ .XID }}" rel=noreferrer>{{ .XID }}</a>
         <p>flavor: {{ .Flavor }}
-        <form action="/submithonker" method="POST">
-          <input type="hidden" name="CSRF" value="{{ $honkercsrf }}">
-          <input type="hidden" name="honkerid" value="{{ .ID }}">
+        <form action="/submitauthor" method="POST">
+          <input type="hidden" name="CSRF" value="{{ $authorcsrf }}">
+          <input type="hidden" name="authorID" value="{{ .ID }}">
           <p>name: <input type="text" name="name" value="{{ .Name }}">
           <p><label for="notes">notes:</label><br>
           <textarea name="notes">{{ .Meta.Notes }}</textarea>

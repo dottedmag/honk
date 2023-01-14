@@ -569,25 +569,25 @@ func ximport(w http.ResponseWriter, r *http.Request) {
 
 func xzone(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
-	rows, err := stmtRecentHonkers.Query(u.UserID, u.UserID)
+	rows, err := stmtRecentAuthors.Query(u.UserID, u.UserID)
 	if err != nil {
 		elog.Printf("query err: %s", err)
 		return
 	}
 	defer rows.Close()
-	var honkers []Honker
+	var authors []Author
 	for rows.Next() {
 		var xid string
 		rows.Scan(&xid)
-		honkers = append(honkers, Honker{XID: xid})
+		authors = append(authors, Author{XID: xid})
 	}
 	rows.Close()
-	for i, _ := range honkers {
-		_, honkers[i].Handle = handles(honkers[i].XID)
+	for i, _ := range authors {
+		_, authors[i].Handle = handles(authors[i].XID)
 	}
 	templinfo := getInfo(r)
 	templinfo["XCSRF"] = login.GetCSRF("ximport", r)
-	templinfo["Honkers"] = honkers
+	templinfo["Authors"] = authors
 	err = readviews.Execute(w, "xzone.html", templinfo)
 	if err != nil {
 		elog.Print(err)
@@ -716,7 +716,7 @@ func showuser(w http.ResponseWriter, r *http.Request) {
 	honkpage(w, u, honks, templinfo)
 }
 
-func showhonker(w http.ResponseWriter, r *http.Request) {
+func showAuthor(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
 	name := mux.Vars(r)["name"]
 	var honks []*ActivityPubActivity
@@ -724,16 +724,16 @@ func showhonker(w http.ResponseWriter, r *http.Request) {
 		name = r.FormValue("xid")
 		honks = gethonksbyxonker(u.UserID, name, 0)
 	} else {
-		honks = gethonksbyhonker(u.UserID, name, 0)
+		honks = getHonksByAuthor(u.UserID, name, 0)
 	}
-	miniform := templates.Sprintf(`<form action="/submithonker" method="POST">
+	miniform := templates.Sprintf(`<form action="/submitauthor" method="POST">
 <input type="hidden" name="CSRF" value="%s">
 <input type="hidden" name="url" value="%s">
-<button tabindex=1 name="add honker" value="add honker">add honker</button>
-</form>`, login.GetCSRF("submithonker", r), name)
-	msg := templates.Sprintf(`honks by honker: <a href="%s" ref="noreferrer">%s</a>%s`, name, name, miniform)
+<button tabindex=1 name="add author" value="add author">add author</button>
+</form>`, login.GetCSRF("submitAuthor", r), name)
+	msg := templates.Sprintf(`honks by author: <a href="%s" ref="noreferrer">%s</a>%s`, name, name, miniform)
 	templinfo := getInfo(r)
-	templinfo["PageName"] = "honker"
+	templinfo["PageName"] = "author"
 	templinfo["PageArg"] = name
 	templinfo["ServerMessage"] = msg
 	templinfo["HonkCSRF"] = login.GetCSRF("honkhonk", r)
@@ -1195,14 +1195,14 @@ func doShare(xid string, user *UserProfile) {
 
 	oonker := xonk.Oonker
 	if oonker == "" {
-		oonker = xonk.Honker
+		oonker = xonk.Author
 	}
 	dt := time.Now().UTC()
 	share := &ActivityPubActivity{
 		UserID:      user.ID,
 		Username:    user.Name,
 		What:        "share",
-		Honker:      user.URL,
+		Author:      user.URL,
 		Oonker:      oonker,
 		XID:         xonk.XID,
 		InReplyToID: xonk.InReplyToID,
@@ -1434,7 +1434,7 @@ func newhonkpage(w http.ResponseWriter, r *http.Request) {
 
 	xonk := getActivityPubActivity(u.UserID, inReplyToID)
 	if xonk != nil {
-		_, replto := handles(xonk.Honker)
+		_, replto := handles(xonk.Author)
 		if replto != "" {
 			text = "@" + replto + " "
 		}
@@ -1453,7 +1453,7 @@ func newhonkpage(w http.ResponseWriter, r *http.Request) {
 }
 
 func canedithonk(user *UserProfile, honk *ActivityPubActivity) bool {
-	if honk == nil || honk.Honker != user.URL || honk.What == "share" {
+	if honk == nil || honk.Author != user.URL || honk.What == "share" {
 		return false
 	}
 	return true
@@ -1606,7 +1606,7 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 			UserID:   userinfo.UserID,
 			Username: userinfo.Username,
 			What:     what,
-			Honker:   user.URL,
+			Author:   user.URL,
 			XID:      xid,
 			Date:     dt,
 			Format:   format,
@@ -1781,12 +1781,12 @@ func submithonk(w http.ResponseWriter, r *http.Request) *ActivityPubActivity {
 	return honk
 }
 
-func showhonkers(w http.ResponseWriter, r *http.Request) {
+func showAuthors(w http.ResponseWriter, r *http.Request) {
 	userinfo := login.GetUserInfo(r)
 	templinfo := getInfo(r)
-	templinfo["Honkers"] = gethonkers(userinfo.UserID)
-	templinfo["HonkerCSRF"] = login.GetCSRF("submithonker", r)
-	err := readviews.Execute(w, "honkers.html", templinfo)
+	templinfo["Authors"] = getAuthors(userinfo.UserID)
+	templinfo["AuthorCSRF"] = login.GetCSRF("submitAuthor", r)
+	err := readviews.Execute(w, "authors.html", templinfo)
 	if err != nil {
 		elog.Print(err)
 	}
@@ -1855,10 +1855,10 @@ func submitChatMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 var combocache = cache.New(cache.Options{Filler: func(userid int64) ([]string, bool) {
-	honkers := gethonkers(userid)
+	authors := getAuthors(userid)
 	var combos []string
-	for _, h := range honkers {
-		combos = append(combos, h.Combos...)
+	for _, a := range authors {
+		combos = append(combos, a.Combos...)
 	}
 	for i, c := range combos {
 		if c == "-" {
@@ -1868,7 +1868,7 @@ var combocache = cache.New(cache.Options{Filler: func(userid int64) ([]string, b
 	combos = stringArrayTrimUntilDupe(combos)
 	sort.Strings(combos)
 	return combos, true
-}, Invalidator: &honkerinvalidator})
+}, Invalidator: &authorInvalidator})
 
 func showcombos(w http.ResponseWriter, r *http.Request) {
 	userinfo := login.GetUserInfo(r)
@@ -1881,7 +1881,7 @@ func showcombos(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func submithonker(w http.ResponseWriter, r *http.Request) {
+func submitAuthor(w http.ResponseWriter, r *http.Request) {
 	u := login.GetUserInfo(r)
 	user, _ := getUserBio(u.Username)
 	name := strings.TrimSpace(r.FormValue("name"))
@@ -1889,7 +1889,7 @@ func submithonker(w http.ResponseWriter, r *http.Request) {
 	peep := r.FormValue("peep")
 	combos := strings.TrimSpace(r.FormValue("combos"))
 	combos = " " + combos + " "
-	honkerid, _ := strconv.ParseInt(r.FormValue("honkerid"), 10, 0)
+	authorID, _ := strconv.ParseInt(r.FormValue("authorID"), 10, 0)
 
 	re_namecheck := regexp.MustCompile("[\\pL[:digit:]_.-]+")
 	if name != "" && !re_namecheck.MatchString(name) {
@@ -1897,31 +1897,31 @@ func submithonker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var meta HonkerMeta
+	var meta AuthorMeta
 	meta.Notes = strings.TrimSpace(r.FormValue("notes"))
 	mj, _ := encodeJson(&meta)
 
-	defer honkerinvalidator.Clear(u.UserID)
+	defer authorInvalidator.Clear(u.UserID)
 
-	if honkerid > 0 {
+	if authorID > 0 {
 		if r.FormValue("delete") == "delete" {
-			unfollowyou(user, honkerid)
-			stmtDeleteHonker.Exec(honkerid)
-			http.Redirect(w, r, "/honkers", http.StatusSeeOther)
+			unfollowyou(user, authorID)
+			stmtDeleteAuthor.Exec(authorID)
+			http.Redirect(w, r, "/authors", http.StatusSeeOther)
 			return
 		}
 		if r.FormValue("unsub") == "unsub" {
-			unfollowyou(user, honkerid)
+			unfollowyou(user, authorID)
 		}
 		if r.FormValue("sub") == "sub" {
-			followyou(user, honkerid)
+			followyou(user, authorID)
 		}
-		_, err := stmtUpdateHonker.Exec(name, combos, mj, honkerid, u.UserID)
+		_, err := stmtUpdateAuthor.Exec(name, combos, mj, authorID, u.UserID)
 		if err != nil {
-			elog.Printf("update honker err: %s", err)
+			elog.Printf("update author err: %s", err)
 			return
 		}
-		http.Redirect(w, r, "/honkers", http.StatusSeeOther)
+		http.Redirect(w, r, "/authors", http.StatusSeeOther)
 		return
 	}
 
@@ -1935,13 +1935,13 @@ func submithonker(w http.ResponseWriter, r *http.Request) {
 		flavor = "peep"
 	}
 
-	err := savehonker(user, url, name, flavor, combos, mj)
+	err := saveAuthor(user, url, name, flavor, combos, mj)
 	if err != nil {
 		http.Error(w, "had some trouble with that: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, "/honkers", http.StatusSeeOther)
+	http.Redirect(w, r, "/authors", http.StatusSeeOther)
 }
 
 func hfcspage(w http.ResponseWriter, r *http.Request) {
@@ -2288,15 +2288,15 @@ func webhydra(w http.ResponseWriter, r *http.Request) {
 		honks = gethonksbyThread(userid, c, wanted)
 		honks = osmosis(honks, userid, false)
 		hydra.Srvmsg = templates.Sprintf("honks in thread: %s", c)
-	case "honker":
+	case "author":
 		xid := r.FormValue("xid")
 		honks = gethonksbyxonker(userid, xid, wanted)
-		miniform := templates.Sprintf(`<form action="/submithonker" method="POST">
+		miniform := templates.Sprintf(`<form action="/submitauthor" method="POST">
 			<input type="hidden" name="CSRF" value="%s">
 			<input type="hidden" name="url" value="%s">
-			<button tabindex=1 name="add honker" value="add honker">add honker</button>
-			</form>`, login.GetCSRF("submithonker", r), xid)
-		msg := templates.Sprintf(`honks by honker: <a href="%s" ref="noreferrer">%s</a>%s`, xid, xid, miniform)
+			<button tabindex=1 name="add author" value="add author">add author</button>
+			</form>`, login.GetCSRF("submitauthor", r), xid)
+		msg := templates.Sprintf(`honks by author: <a href="%s" ref="noreferrer">%s</a>%s`, xid, xid, miniform)
 		hydra.Srvmsg = msg
 	case "user":
 		uname := r.FormValue("uname")
@@ -2497,7 +2497,7 @@ func serve() {
 	readviews = templates.Load(develMode,
 		viewDir+"/views/honkpage.html",
 		viewDir+"/views/honkfrags.html",
-		viewDir+"/views/honkers.html",
+		viewDir+"/views/authors.html",
 		viewDir+"/views/chat.html",
 		viewDir+"/views/hfcs.html",
 		viewDir+"/views/combos.html",
@@ -2595,15 +2595,15 @@ func serve() {
 	LoggedInRouter.Handle("/savehfcs", login.CSRFWrap("filter", http.HandlerFunc(savehfcs)))
 	LoggedInRouter.Handle("/saveuser", login.CSRFWrap("saveuser", http.HandlerFunc(saveuser)))
 	LoggedInRouter.Handle("/ximport", login.CSRFWrap("ximport", http.HandlerFunc(ximport)))
-	LoggedInRouter.HandleFunc("/honkers", showhonkers)
-	LoggedInRouter.HandleFunc("/h/{name:[\\pL[:digit:]_.-]+}", showhonker)
-	LoggedInRouter.HandleFunc("/h", showhonker)
+	LoggedInRouter.HandleFunc("/authors", showAuthors)
+	LoggedInRouter.HandleFunc("/h/{name:[\\pL[:digit:]_.-]+}", showAuthor)
+	LoggedInRouter.HandleFunc("/h", showAuthor)
 	LoggedInRouter.HandleFunc("/c/{name:[\\pL[:digit:]_.-]+}", showcombo)
 	LoggedInRouter.HandleFunc("/c", showcombos)
 	LoggedInRouter.HandleFunc("/t", showThread)
 	LoggedInRouter.HandleFunc("/q", showsearch)
 	LoggedInRouter.HandleFunc("/hydra", webhydra)
-	LoggedInRouter.Handle("/submithonker", login.CSRFWrap("submithonker", http.HandlerFunc(submithonker)))
+	LoggedInRouter.Handle("/submitauthor", login.CSRFWrap("submitAuthor", http.HandlerFunc(submitAuthor)))
 
 	hserver := &http.Server{
 		ReadTimeout:  10 * time.Second,

@@ -134,7 +134,7 @@ func importMastotoots(user *UserProfile, source string) {
 		honk := ActivityPubActivity{
 			UserID:      user.ID,
 			What:        "honk",
-			Honker:      user.URL,
+			Author:      user.URL,
 			XID:         xid,
 			InReplyToID: toot.Object.InReplyTo,
 			Date:        toot.Object.Published,
@@ -192,7 +192,7 @@ func importMastotoots(user *UserProfile, source string) {
 }
 
 func importMastotooters(user *UserProfile, source string) {
-	ilog.Println("Importing honkers...")
+	ilog.Println("Importing authors...")
 	fd, err := os.Open(source + "/following_accounts.csv")
 	if err != nil {
 		elog.Fatal(err)
@@ -204,7 +204,7 @@ func importMastotooters(user *UserProfile, source string) {
 	}
 	fd.Close()
 
-	var meta HonkerMeta
+	var meta AuthorMeta
 	mj, _ := encodeJson(&meta)
 
 	for i, d := range data {
@@ -215,9 +215,9 @@ func importMastotooters(user *UserProfile, source string) {
 		name := ""
 		flavor := "peep"
 		combos := ""
-		err := savehonker(user, url, name, flavor, combos, mj)
+		err := saveAuthor(user, url, name, flavor, combos, mj)
 		if err != nil {
-			elog.Printf("trouble with a honker: %s", err)
+			elog.Printf("trouble with a author: %s", err)
 		}
 	}
 }
@@ -422,7 +422,7 @@ func importTwitter(username, source string) {
 			UserID:   user.ID,
 			Username: user.Name,
 			What:     what,
-			Honker:   user.URL,
+			Author:   user.URL,
 			XID:      xid,
 			Date:     t.date,
 			Format:   "markdown",

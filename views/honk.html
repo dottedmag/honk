@@ -6,15 +6,15 @@
 {{ with .Honk }}
 <header>
 {{ if $sharecsrf }}
-<a class="honkerlink" href="/h?xid={{ .Honker }}" data-xid="{{ .Honker }}">
+<a class="authorlink" href="/h?xid={{ .Author }}" data-xid="{{ .Author }}">
 {{ else }}
-<a href="{{ .Honker }}" rel=noreferrer>
+<a href="{{ .Author }}" rel=noreferrer>
 {{ end }}
-<img alt="" src="/a?a={{ .Honker}}">
+<img alt="" src="/a?a={{ .Author }}">
 {{ if $sharecsrf }} </a> {{ end }}
 {{ if .Oonker }}
 {{ if $sharecsrf }}
-<a class="honkerlink" href="/h?xid={{ .Oonker }}" data-xid="{{ .Oonker }}">
+<a class="authorlink" href="/h?xid={{ .Oonker }}" data-xid="{{ .Oonker }}">
 {{ else }}
 <a href="{{ .Oonker }}" rel=noreferrer>
 {{ end }}
@@ -23,16 +23,16 @@
 {{ end }}
 <p>
 {{ if $sharecsrf }}
-<a class="honkerlink" href="/h?xid={{ .Honker }}" data-xid="{{ .Honker }}">{{ .Username }}</a>
+<a class="authorlink" href="/h?xid={{ .Author }}" data-xid="{{ .Author }}">{{ .Username }}</a>
 {{ else }}
-<a href="{{ .Honker }}" rel=noreferrer>{{ .Username }}</a>
+<a href="{{ .Author }}" rel=noreferrer>{{ .Username }}</a>
 {{ end }}
 <span class="clip"><a href="{{ .URL }}" rel=noreferrer>{{ .What }}</a> {{ .Date.Local.Format "02 Jan 2006 15:04 -0700" }}</span>
 {{ if .Oonker }}
 <br>
 <span style="margin-left: 1em;" class="clip">
 {{ if $sharecsrf }}
-original: <a class="honkerlink" href="/h?xid={{ .Oonker }}" data-xid="{{ .Oonker }}">{{ .Oondle }}</a>
+original: <a class="authorlink" href="/h?xid={{ .Oonker }}" data-xid="{{ .Oonker }}">{{ .Oondle }}</a>
 {{ else }}
 original: <a href="{{ .Oonker }}" rel=noreferrer>{{ .Oondle }}</a>
 {{ end }}

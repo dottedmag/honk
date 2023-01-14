@@ -105,60 +105,60 @@ func getUserBio(name string) (*UserProfile, error) {
 	return user, nil
 }
 
-var honkerinvalidator cache.Invalidator
+var authorInvalidator cache.Invalidator
 
-func gethonkers(userid int64) []*Honker {
-	rows, err := stmtHonkers.Query(userid)
+func getAuthors(userid int64) []*Author {
+	rows, err := stmtAuthors.Query(userid)
 	if err != nil {
-		elog.Printf("error querying honkers: %s", err)
+		elog.Printf("error querying authors: %s", err)
 		return nil
 	}
 	defer rows.Close()
-	var honkers []*Honker
+	var authors []*Author
 	for rows.Next() {
-		h := new(Honker)
+		a := &Author{}
 		var combos, meta string
-		err = rows.Scan(&h.ID, &h.UserID, &h.Name, &h.XID, &h.Flavor, &combos, &meta)
+		err = rows.Scan(&a.ID, &a.UserID, &a.Name, &a.XID, &a.Flavor, &combos, &meta)
 		if err == nil {
-			err = json.Unmarshal([]byte(meta), &h.Meta)
+			err = json.Unmarshal([]byte(meta), &a.Meta)
 		}
 		if err != nil {
-			elog.Printf("error scanning honker: %s", err)
+			elog.Printf("error scanning author: %s", err)
 			continue
 		}
-		h.Combos = strings.Split(strings.TrimSpace(combos), " ")
-		honkers = append(honkers, h)
+		a.Combos = strings.Split(strings.TrimSpace(combos), " ")
+		authors = append(authors, a)
 	}
-	return honkers
+	return authors
 }
 
-func getdubs(userid int64) []*Honker {
+func getdubs(userid int64) []*Author {
 	rows, err := stmtDubbers.Query(userid)
 	return dubsfromrows(rows, err)
 }
 
-func getnameddubs(userid int64, name string) []*Honker {
+func getnameddubs(userid int64, name string) []*Author {
 	rows, err := stmtNamedDubbers.Query(userid, name)
 	return dubsfromrows(rows, err)
 }
 
-func dubsfromrows(rows *sql.Rows, err error) []*Honker {
+func dubsfromrows(rows *sql.Rows, err error) []*Author {
 	if err != nil {
 		elog.Printf("error querying dubs: %s", err)
 		return nil
 	}
 	defer rows.Close()
-	var honkers []*Honker
+	var authors []*Author
 	for rows.Next() {
-		h := new(Honker)
-		err = rows.Scan(&h.ID, &h.UserID, &h.Name, &h.XID, &h.Flavor)
+		a := &Author{}
+		err = rows.Scan(&a.ID, &a.UserID, &a.Name, &a.XID, &a.Flavor)
 		if err != nil {
-			elog.Printf("error scanning honker: %s", err)
+			elog.Printf("error scanning author: %s", err)
 			return nil
 		}
-		honkers = append(honkers, h)
+		authors = append(authors, a)
 	}
-	return honkers
+	return authors
 }
 
 func allusers() []login.UserInfo {
@@ -271,8 +271,8 @@ func getsavedhonks(userid int64, wanted int64) []*ActivityPubActivity {
 	rows, err := stmtHonksISaved.Query(wanted, userid)
 	return getsomehonks(rows, err)
 }
-func gethonksbyhonker(userid int64, honker string, wanted int64) []*ActivityPubActivity {
-	rows, err := stmtHonksByHonker.Query(wanted, userid, honker, userid)
+func getHonksByAuthor(userid int64, author string, wanted int64) []*ActivityPubActivity {
+	rows, err := stmtHonksByAuthor.Query(wanted, userid, author, userid)
 	return getsomehonks(rows, err)
 }
 func gethonksbyxonker(userid int64, xonker string, wanted int64) []*ActivityPubActivity {
@@ -317,15 +317,15 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 			params = append(params, site)
 			continue
 		}
-		if strings.HasPrefix(t, "honker:") {
-			honker := t[7:]
-			xid := fullname(honker, userid)
+		if strings.HasPrefix(t, "author:") {
+			author := t[7:]
+			xid := fullname(author, userid)
 			if xid != "" {
-				honker = xid
+				author = xid
 			}
-			queries = append(queries, negate+"(honks.honker = ? or honks.oonker = ?)")
-			params = append(params, honker)
-			params = append(params, honker)
+			queries = append(queries, negate+"(honks.author = ? or honks.oonker = ?)")
+			params = append(params, author)
+			params = append(params, author)
 			continue
 		}
 		t = "%" + t + "%"
@@ -333,7 +333,7 @@ func gethonksbysearch(userid int64, q string, wanted int64) []*ActivityPubActivi
 		params = append(params, t)
 	}
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, rid, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, author, oonker, honks.xid, rid, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	where := "where " + strings.Join(queries, " and ")
 	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
 	limit := " order by honks.honkid desc limit 250"
@@ -379,7 +379,7 @@ type RowLike interface {
 func scanhonk(row RowLike) *ActivityPubActivity {
 	h := new(ActivityPubActivity)
 	var dt, aud string
-	err := row.Scan(&h.ID, &h.UserID, &h.Username, &h.What, &h.Honker, &h.Oonker, &h.XID, &h.InReplyToID,
+	err := row.Scan(&h.ID, &h.UserID, &h.Username, &h.What, &h.Author, &h.Oonker, &h.XID, &h.InReplyToID,
 		&dt, &h.URL, &aud, &h.Text, &h.Precis, &h.Format, &h.Thread, &h.Whofore, &h.Flags)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -765,7 +765,7 @@ func savehonk(h *ActivityPubActivity) error {
 		return err
 	}
 
-	res, err := tx.Stmt(stmtSaveHonk).Exec(h.UserID, h.What, h.Honker, h.XID, h.InReplyToID, dt, h.URL,
+	res, err := tx.Stmt(stmtSaveHonk).Exec(h.UserID, h.What, h.Author, h.XID, h.InReplyToID, dt, h.URL,
 		aud, h.Text, h.Thread, h.Whofore, h.Format, h.Precis,
 		h.Oonker, h.Flags)
 	if err == nil {
@@ -952,7 +952,7 @@ func encodeJson(what interface{}) (string, error) {
 	return buf.String(), err
 }
 
-func savehonker(user *UserProfile, url, name, flavor, combos, mj string) error {
+func saveAuthor(user *UserProfile, url, name, flavor, combos, mj string) error {
 	var owner string
 	if url[0] == '#' {
 		flavor = "peep"
@@ -963,7 +963,7 @@ func savehonker(user *UserProfile, url, name, flavor, combos, mj string) error {
 	} else {
 		info, err := investigate(url)
 		if err != nil {
-			ilog.Printf("failed to investigate honker: %s", err)
+			ilog.Printf("failed to investigate author: %s", err)
 			return err
 		}
 		url = info.XID
@@ -975,25 +975,25 @@ func savehonker(user *UserProfile, url, name, flavor, combos, mj string) error {
 
 	var x string
 	db := opendatabase()
-	row := db.QueryRow("select xid from honkers where xid = ? and userid = ? and flavor in ('sub', 'unsub', 'peep')", url, user.ID)
+	row := db.QueryRow("select xid from authors where xid = ? and userid = ? and flavor in ('sub', 'unsub', 'peep')", url, user.ID)
 	err := row.Scan(&x)
 	if err != sql.ErrNoRows {
 		if err != nil {
-			elog.Printf("honker scan err: %s", err)
+			elog.Printf("author scan err: %s", err)
 		} else {
 			err = fmt.Errorf("it seems you are already subscribed to them")
 		}
 		return err
 	}
 
-	res, err := stmtSaveHonker.Exec(user.ID, name, url, flavor, combos, owner, mj)
+	res, err := stmtSaveAuthor.Exec(user.ID, name, url, flavor, combos, owner, mj)
 	if err != nil {
 		elog.Print(err)
 		return err
 	}
-	honkerid, _ := res.LastInsertId()
+	authorID, _ := res.LastInsertId()
 	if flavor == "presub" {
-		followyou(user, honkerid)
+		followyou(user, authorID)
 	}
 	return nil
 }
@@ -1004,11 +1004,11 @@ func cleanupdb(arg string) {
 	var sqlargs []interface{}
 	var where string
 	if err != nil {
-		honker := arg
+		author := arg
 		expdate := time.Now().Add(-3 * 24 * time.Hour).UTC().Format(dbtimeformat)
-		where = "dt < ? and honker = ?"
+		where = "dt < ? and author = ?"
 		sqlargs = append(sqlargs, expdate)
-		sqlargs = append(sqlargs, honker)
+		sqlargs = append(sqlargs, author)
 	} else {
 		expdate := time.Now().Add(-time.Duration(days) * 24 * time.Hour).UTC().Format(dbtimeformat)
 		where = "dt < ? and thread not in (select thread from honks where flags & 4 or whofore = 2 or whofore = 3)"
@@ -1065,18 +1065,18 @@ func cleanupdb(arg string) {
 	}
 }
 
-var stmtHonkers, stmtDubbers, stmtNamedDubbers, stmtSaveHonker, stmtUpdateFlavor, stmtUpdateHonker *sql.Stmt
-var stmtDeleteHonker *sql.Stmt
+var stmtAuthors, stmtDubbers, stmtNamedDubbers, stmtSaveAuthor, stmtUpdateFlavor, stmtUpdateAuthor *sql.Stmt
+var stmtDeleteAuthor *sql.Stmt
 var stmtAnyXonk, stmtOneActivityPubActivity, stmtPublicHonks, stmtUserHonks, stmtHonksByCombo, stmtHonksByThread *sql.Stmt
 var stmtHonksByHashtag, stmtHonksForUser, stmtHonksForMe, stmtSaveDub, stmtHonksByXonker *sql.Stmt
 var stmtHonksFromLongAgo *sql.Stmt
-var stmtHonksByHonker, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
+var stmtHonksByAuthor, stmtSaveHonk, stmtUserByName, stmtUserByNumber *sql.Stmt
 var stmtEventHonks, stmtOneShare, stmtFindZonk, stmtFindXonk, stmtSaveAttachment *sql.Stmt
 var stmtFindFile, stmtGetFileData, stmtSaveFileData, stmtSaveFile *sql.Stmt
 var stmtCheckFileData *sql.Stmt
-var stmtAddResubmission, stmtGetResubmissions, stmtLoadResubmission, stmtDeleteResubmission, stmtOneHonker *sql.Stmt
+var stmtAddResubmission, stmtGetResubmissions, stmtLoadResubmission, stmtDeleteResubmission, stmtOneAuthor *sql.Stmt
 var stmtUntagged, stmtDeleteHonk, stmtDeleteAttachments, stmtDeleteHashtags, stmtSaveAction *sql.Stmt
-var stmtGetActions, stmtRecentHonkers *sql.Stmt
+var stmtGetActions, stmtRecentAuthors *sql.Stmt
 var stmtAllHashtags, stmtSaveHashtag, stmtUpdateFlags, stmtClearFlags *sql.Stmt
 var stmtHonksForUserFirstClass *sql.Stmt
 var stmtSaveMeta, stmtDeleteAllMeta, stmtDeleteOneMeta, stmtDeleteSomeMeta, stmtUpdateHonk *sql.Stmt
@@ -1099,16 +1099,16 @@ func sqlMustPrepare(db *sql.DB, s string) *sql.Stmt {
 }
 
 func prepareStatements(db *sql.DB) {
-	stmtHonkers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor, combos, meta from honkers where userid = ? and (flavor = 'presub' or flavor = 'sub' or flavor = 'peep' or flavor = 'unsub') order by name")
-	stmtSaveHonker = sqlMustPrepare(db, "insert into honkers (userid, name, xid, flavor, combos, owner, meta, folxid) values (?, ?, ?, ?, ?, ?, ?, '')")
-	stmtUpdateFlavor = sqlMustPrepare(db, "update honkers set flavor = ?, folxid = ? where userid = ? and name = ? and xid = ? and flavor = ?")
-	stmtUpdateHonker = sqlMustPrepare(db, "update honkers set name = ?, combos = ?, meta = ? where honkerid = ? and userid = ?")
-	stmtDeleteHonker = sqlMustPrepare(db, "delete from honkers where honkerid = ?")
-	stmtOneHonker = sqlMustPrepare(db, "select xid from honkers where name = ? and userid = ?")
-	stmtDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and flavor = 'dub'")
-	stmtNamedDubbers = sqlMustPrepare(db, "select honkerid, userid, name, xid, flavor from honkers where userid = ? and name = ? and flavor = 'dub'")
+	stmtAuthors = sqlMustPrepare(db, "select authorID, userid, name, xid, flavor, combos, meta from authors where userid = ? and (flavor = 'presub' or flavor = 'sub' or flavor = 'peep' or flavor = 'unsub') order by name")
+	stmtSaveAuthor = sqlMustPrepare(db, "insert into authors (userid, name, xid, flavor, combos, owner, meta, folxid) values (?, ?, ?, ?, ?, ?, ?, '')")
+	stmtUpdateFlavor = sqlMustPrepare(db, "update authors set flavor = ?, folxid = ? where userid = ? and name = ? and xid = ? and flavor = ?")
+	stmtUpdateAuthor = sqlMustPrepare(db, "update authors set name = ?, combos = ?, meta = ? where authorID = ? and userid = ?")
+	stmtDeleteAuthor = sqlMustPrepare(db, "delete from authors where authorID = ?")
+	stmtOneAuthor = sqlMustPrepare(db, "select xid from authors where name = ? and userid = ?")
+	stmtDubbers = sqlMustPrepare(db, "select authorID, userid, name, xid, flavor from authors where userid = ? and flavor = 'dub'")
+	stmtNamedDubbers = sqlMustPrepare(db, "select authorID, userid, name, xid, flavor from authors where userid = ? and name = ? and flavor = 'dub'")
 
-	selecthonks := "select honks.honkid, honks.userid, username, what, honker, oonker, honks.xid, inReplytoID, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
+	selecthonks := "select honks.honkid, honks.userid, username, what, author, oonker, honks.xid, inReplytoID, dt, url, audience, text, precis, format, thread, whofore, flags from honks join users on honks.userid = users.userid "
 	limit := " order by honks.honkid desc limit 250"
 	smalllimit := " order by honks.honkid desc limit ?"
 	butnotthose := " and thread not in (select object from actions where userid = ? and action = 'mute-thread' order by actionID desc limit 100)"
@@ -1118,15 +1118,15 @@ func prepareStatements(db *sql.DB) {
 	stmtPublicHonks = sqlMustPrepare(db, selecthonks+"where whofore = 2 and dt > ?"+smalllimit)
 	stmtEventHonks = sqlMustPrepare(db, selecthonks+"where (whofore = 2 or honks.userid = ?) and what = 'event'"+smalllimit)
 	stmtUserHonks = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and (whofore = 2 or whofore = ?) and username = ? and dt > ?"+smalllimit)
-	myhonkers := " and honker in (select xid from honkers where userid = ? and (flavor = 'sub' or flavor = 'peep' or flavor = 'presub') and combos not like '% - %')"
-	stmtHonksForUser = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and dt > ?"+myhonkers+butnotthose+limit)
-	stmtHonksForUserFirstClass = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and dt > ? and (what <> 'tonk')"+myhonkers+butnotthose+limit)
+	myAuthors := " and author in (select xid from authors where userid = ? and (flavor = 'sub' or flavor = 'peep' or flavor = 'presub') and combos not like '% - %')"
+	stmtHonksForUser = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and dt > ?"+myAuthors+butnotthose+limit)
+	stmtHonksForUserFirstClass = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and dt > ? and (what <> 'tonk')"+myAuthors+butnotthose+limit)
 	stmtHonksForMe = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and dt > ? and whofore = 1"+butnotthose+limit)
 	stmtHonksFromLongAgo = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and dt > ? and dt < ? and whofore = 2"+butnotthose+limit)
 	stmtHonksISaved = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and honks.userid = ? and flags & 4 order by honks.honkid desc")
-	stmtHonksByHonker = sqlMustPrepare(db, selecthonks+"join honkers on (honkers.xid = honks.honker or honkers.xid = honks.oonker) where honks.honkid > ? and honks.userid = ? and honkers.name = ?"+butnotthose+limit)
-	stmtHonksByXonker = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and (honker = ? or oonker = ?)"+butnotthose+limit)
-	stmtHonksByCombo = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and honks.honker in (select xid from honkers where honkers.userid = ? and honkers.combos like ?) "+butnotthose+" union "+selecthonks+"join hashtags on honks.honkid = hashtags.honkid where honks.honkid > ? and honks.userid = ? and hashtags.hashtag in (select xid from honkers where combos like ?)"+butnotthose+limit)
+	stmtHonksByAuthor = sqlMustPrepare(db, selecthonks+"join authors on (authors.xid = honks.author or authors.xid = honks.oonker) where honks.honkid > ? and honks.userid = ? and authors.name = ?"+butnotthose+limit)
+	stmtHonksByXonker = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and (author = ? or oonker = ?)"+butnotthose+limit)
+	stmtHonksByCombo = sqlMustPrepare(db, selecthonks+" where honks.honkid > ? and honks.userid = ? and honks.author in (select xid from authors where authors.userid = ? and authors.combos like ?) "+butnotthose+" union "+selecthonks+"join hashtags on honks.honkid = hashtags.honkid where honks.honkid > ? and honks.userid = ? and hashtags.hashtag in (select xid from authors where combos like ?)"+butnotthose+limit)
 	stmtHonksByThread = sqlMustPrepare(db, selecthonks+"where honks.honkid > ? and (honks.userid = ? or (? = -1 and whofore = 2)) and thread = ?"+limit)
 	stmtHonksByHashtag = sqlMustPrepare(db, selecthonks+"join hashtags on honks.honkid = hashtags.honkid where honks.honkid > ? and hashtags.hashtag = ? and (honks.userid = ? or (? = -1 and honks.whofore = 2))"+limit)
 
@@ -1134,7 +1134,7 @@ func prepareStatements(db *sql.DB) {
 	stmtDeleteAllMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ?")
 	stmtDeleteSomeMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus not in ('oldrev')")
 	stmtDeleteOneMeta = sqlMustPrepare(db, "delete from honkmeta where honkid = ? and genus = ?")
-	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, honker, xid, inReplyToID, dt, url, audience, text, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmtSaveHonk = sqlMustPrepare(db, "insert into honks (userid, what, author, xid, inReplyToID, dt, url, audience, text, thread, whofore, format, precis, oonker, flags) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	stmtDeleteHonk = sqlMustPrepare(db, "delete from honks where honkid = ?")
 	stmtUpdateHonk = sqlMustPrepare(db, "update honks set precis = ?, text = ?, format = ?, whofore = ?, dt = ? where honkid = ?")
 	stmtSaveHashtag = sqlMustPrepare(db, "insert into hashtags (hashtag, honkid) values (?, ?)")
@@ -1150,7 +1150,7 @@ func prepareStatements(db *sql.DB) {
 	stmtFindFile = sqlMustPrepare(db, "select fileid, xid from filemeta where url = ? and local = 1")
 	stmtUserByName = sqlMustPrepare(db, "select userid, username, displayname, about, pubkey, seckey, options from users where username = ?")
 	stmtUserByNumber = sqlMustPrepare(db, "select userid, username, displayname, about, pubkey, seckey, options from users where userid = ?")
-	stmtSaveDub = sqlMustPrepare(db, "insert into honkers (userid, name, xid, flavor, combos, owner, meta, folxid) values (?, ?, ?, ?, '', '', '', ?)")
+	stmtSaveDub = sqlMustPrepare(db, "insert into authors (userid, name, xid, flavor, combos, owner, meta, folxid) values (?, ?, ?, ?, '', '', '', ?)")
 	stmtAddResubmission = sqlMustPrepare(db, "insert into resubmissions (dt, tries, userid, rcpt, msg) values (?, ?, ?, ?, ?)")
 	stmtGetResubmissions = sqlMustPrepare(db, "select resubmissionid, dt from resubmissions")
 	stmtLoadResubmission = sqlMustPrepare(db, "select tries, userid, rcpt, msg from resubmissions where resubmissionid = ?")
@@ -1159,7 +1159,7 @@ func prepareStatements(db *sql.DB) {
 	stmtFindZonk = sqlMustPrepare(db, "select actionID from actions where userid = ? and object = ? and action = 'zonk'")
 	stmtGetActions = sqlMustPrepare(db, "select actionID, object, action from actions where userid = ? and action <> 'zonk'")
 	stmtSaveAction = sqlMustPrepare(db, "insert into actions (userid, object, action) values (?, ?, ?)")
-	stmtRecentHonkers = sqlMustPrepare(db, "select distinct(honker) from honks where userid = ? and honker not in (select xid from honkers where userid = ? and flavor = 'sub') order by honkid desc limit 100")
+	stmtRecentAuthors = sqlMustPrepare(db, "select distinct(author) from honks where userid = ? and author not in (select xid from authors where userid = ? and flavor = 'sub') order by honkid desc limit 100")
 	stmtUpdateFlags = sqlMustPrepare(db, "update honks set flags = flags | ? where honkid = ?")
 	stmtClearFlags = sqlMustPrepare(db, "update honks set flags = flags & ~ ? where honkid = ?")
 	stmtAllHashtags = sqlMustPrepare(db, "select hashtag, count(hashtag) from hashtags join honks on hashtags.honkid = honks.honkid where (honks.userid = ? or honks.whofore = 2) group by hashtag")
@@ -1170,7 +1170,7 @@ func prepareStatements(db *sql.DB) {
 	stmtSaveChatMessage = sqlMustPrepare(db, "insert into chatMessages (userid, xid, who, target, dt, text, format) values (?, ?, ?, ?, ?, ?, ?)")
 	stmtLoadChatMessages = sqlMustPrepare(db, "select chatMessageId, userid, xid, who, target, dt, text, format from chatMessages where userid = ? and dt > ? order by chatMessageId asc")
 	stmtGetChats = sqlMustPrepare(db, "select distinct(target) from chatMessages where userid = ?")
-	stmtGetTopDubbed = sqlMustPrepare(db, `SELECT COUNT(*) as c,userid FROM honkers WHERE flavor = "dub" GROUP BY userid`)
+	stmtGetTopDubbed = sqlMustPrepare(db, `SELECT COUNT(*) as c,userid FROM authors WHERE flavor = "dub" GROUP BY userid`)
 
 	stmtActorSetBoxes = sqlMustPrepare(db, "insert into actorBoxes (ident, inbox, outbox, sharedInbox) values (?, ?, ?, ?)")
 	stmtActorHasBoxes = sqlMustPrepare(db, "select COUNT(*) from actorBoxes where ident = ?")

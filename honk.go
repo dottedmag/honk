@@ -76,7 +76,7 @@ type ActivityPubActivity struct {
 	UserID      int64
 	Username    string
 	What        string
-	Honker      string
+	Author      string
 	Handle      string
 	Handles     string
 	Oonker      string
@@ -226,7 +226,7 @@ type Time struct {
 	Duration  Duration
 }
 
-type Honker struct {
+type Author struct {
 	ID     int64
 	UserID int64
 	Name   string
@@ -234,10 +234,10 @@ type Honker struct {
 	Handle string
 	Flavor string
 	Combos []string
-	Meta   HonkerMeta
+	Meta   AuthorMeta
 }
 
-type HonkerMeta struct {
+type AuthorMeta struct {
 	Notes string
 }
 
@@ -271,7 +271,7 @@ func ElaborateUnitTests() {
 func unplugserver(hostname string) {
 	db := opendatabase()
 	xid := fmt.Sprintf("%%https://%s/%%", hostname)
-	db.Exec("delete from honkers where xid like ? and flavor = 'dub'", xid)
+	db.Exec("delete from authors where xid like ? and flavor = 'dub'", xid)
 	db.Exec("delete from resubmissions where rcpt like ?", xid)
 }
 

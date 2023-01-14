@@ -16,7 +16,7 @@ import (
 type Honk struct {
 	ID     int
 	XID    string
-	Honker string
+	Author string
 }
 
 type HonkSet struct {
@@ -59,7 +59,7 @@ func gethonks(server, token string, wanted int) HonkSet {
 }
 
 func share(server, token string, honk Honk) {
-	log.Printf("sharing %s from %s", honk.XID, honk.Honker)
+	log.Printf("sharing %s from %s", honk.XID, honk.Author)
 	form := make(url.Values)
 	form.Add("action", "zonkit")
 	form.Add("action", "share")

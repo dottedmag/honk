@@ -10,7 +10,6 @@
   * grapevine
   * hfcs (honk filtering and censoring system)
   * honk
-  * honker (subscribed?)
   * imaginate
   * lingo
   * memetize

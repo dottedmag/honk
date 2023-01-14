@@ -388,7 +388,7 @@ func deleteActivityPubActivity(userid int64, xid string) {
 
 func saveActivityPubActivity(x *ActivityPubActivity) {
 	ilog.Printf("saving xonk: %s", x.XID)
-	go handles(x.Honker)
+	go handles(x.Author)
 	go handles(x.Oonker)
 	savehonk(x)
 }
@@ -712,21 +712,21 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 		// early init
 		xonk.XID = xid
 		xonk.UserID = user.ID
-		xonk.Honker, _ = item.GetString("actor")
-		if xonk.Honker == "" {
-			xonk.Honker, _ = item.GetString("attributedTo")
+		xonk.Author, _ = item.GetString("actor")
+		if xonk.Author == "" {
+			xonk.Author, _ = item.GetString("attributedTo")
 		}
 		if obj != nil {
-			if xonk.Honker == "" {
-				xonk.Honker = extractattrto(obj)
+			if xonk.Author == "" {
+				xonk.Author = extractattrto(obj)
 			}
 			xonk.Oonker = extractattrto(obj)
-			if xonk.Oonker == xonk.Honker {
+			if xonk.Oonker == xonk.Author {
 				xonk.Oonker = ""
 			}
 			xonk.Audience = newphone(nil, obj)
 		}
-		xonk.Audience = append(xonk.Audience, xonk.Honker)
+		xonk.Audience = append(xonk.Audience, xonk.Author)
 		xonk.Audience = stringArrayTrimUntilDupe(xonk.Audience)
 		xonk.Public = publicAudience(xonk.Audience)
 
@@ -987,8 +987,8 @@ func xonksaver(user *UserProfile, item junk.Junk, origin string) *ActivityPubAct
 			ch := ChatMessage{
 				UserID:      xonk.UserID,
 				XID:         xid,
-				Who:         xonk.Honker,
-				Target:      xonk.Honker,
+				Who:         xonk.Author,
+				Target:      xonk.Author,
 				Date:        xonk.Date,
 				Text:        xonk.Text,
 				Format:      xonk.Format,
@@ -1807,17 +1807,17 @@ func updateMe(username string) {
 func followme(user *UserProfile, who string, name string, j junk.Junk) {
 	folxid, _ := j.GetString("id")
 
-	log.Printf("updating honker follow: %s %s", who, folxid)
+	log.Printf("updating author follow: %s %s", who, folxid)
 
 	var x string
 	db := opendatabase()
-	row := db.QueryRow("select xid from honkers where name = ? and xid = ? and userid = ? and flavor in ('dub', 'undub')", name, who, user.ID)
+	row := db.QueryRow("select xid from authors where name = ? and xid = ? and userid = ? and flavor in ('dub', 'undub')", name, who, user.ID)
 	err := row.Scan(&x)
 	if err != sql.ErrNoRows {
 		ilog.Printf("duplicate follow request: %s", who)
 		_, err = stmtUpdateFlavor.Exec("dub", folxid, user.ID, name, who, "undub")
 		if err != nil {
-			elog.Printf("error updating honker: %s", err)
+			elog.Printf("error updating author: %s", err)
 		}
 	} else {
 		stmtSaveDub.Exec(user.ID, name, who, "dub", folxid)
@@ -1831,58 +1831,58 @@ func unfollowme(user *UserProfile, who string, name string, j junk.Junk) {
 		folxid, _ = j.GetString("object")
 
 		db := opendatabase()
-		row := db.QueryRow("select xid, name from honkers where userid = ? and folxid = ? and flavor in ('dub', 'undub')", user.ID, folxid)
+		row := db.QueryRow("select xid, name from authors where userid = ? and folxid = ? and flavor in ('dub', 'undub')", user.ID, folxid)
 		err := row.Scan(&who, &name)
 		if err != nil {
 			if err != sql.ErrNoRows {
-				elog.Printf("error scanning honker: %s", err)
+				elog.Printf("error scanning authors: %s", err)
 			}
 			return
 		}
 	}
 
-	ilog.Printf("updating honker undo: %s %s", who, folxid)
+	ilog.Printf("updating author undo: %s %s", who, folxid)
 	_, err := stmtUpdateFlavor.Exec("undub", folxid, user.ID, name, who, "dub")
 	if err != nil {
-		elog.Printf("error updating honker: %s", err)
+		elog.Printf("error updating author: %s", err)
 		return
 	}
 }
 
-func followyou(user *UserProfile, honkerid int64) {
+func followyou(user *UserProfile, authorID int64) {
 	var url, owner string
 	db := opendatabase()
-	row := db.QueryRow("select xid, owner from honkers where honkerid = ? and userid = ? and flavor in ('unsub', 'peep', 'presub', 'sub')",
-		honkerid, user.ID)
+	row := db.QueryRow("select xid, owner from authors where authorID = ? and userid = ? and flavor in ('unsub', 'peep', 'presub', 'sub')",
+		authorID, user.ID)
 	err := row.Scan(&url, &owner)
 	if err != nil {
-		elog.Printf("can't get honker xid: %s", err)
+		elog.Printf("can't get author xid: %s", err)
 		return
 	}
 	folxid := make18CharRandomString()
 	ilog.Printf("subscribing to %s", url)
-	_, err = db.Exec("update honkers set flavor = ?, folxid = ? where honkerid = ?", "presub", folxid, honkerid)
+	_, err = db.Exec("update authors set flavor = ?, folxid = ? where authorID = ?", "presub", folxid, authorID)
 	if err != nil {
-		elog.Printf("error updating honker: %s", err)
+		elog.Printf("error updating author: %s", err)
 		return
 	}
 	go subsub(user, url, owner, folxid)
 
 }
-func unfollowyou(user *UserProfile, honkerid int64) {
+func unfollowyou(user *UserProfile, authorID int64) {
 	db := opendatabase()
-	row := db.QueryRow("select xid, owner, folxid from honkers where honkerid = ? and userid = ? and flavor in ('sub')",
-		honkerid, user.ID)
+	row := db.QueryRow("select xid, owner, folxid from authors where authorID = ? and userid = ? and flavor in ('sub')",
+		authorID, user.ID)
 	var url, owner, folxid string
 	err := row.Scan(&url, &owner, &folxid)
 	if err != nil {
-		elog.Printf("can't get honker xid: %s", err)
+		elog.Printf("can't get author xid: %s", err)
 		return
 	}
 	ilog.Printf("unsubscribing from %s", url)
-	_, err = db.Exec("update honkers set flavor = ? where honkerid = ?", "unsub", honkerid)
+	_, err = db.Exec("update authors set flavor = ? where authorID = ?", "unsub", authorID)
 	if err != nil {
-		elog.Printf("error updating honker: %s", err)
+		elog.Printf("error updating author: %s", err)
 		return
 	}
 	go sendUndo(user, url, owner, folxid)
@@ -1891,19 +1891,19 @@ func unfollowyou(user *UserProfile, honkerid int64) {
 func followyou2(user *UserProfile, j junk.Junk) {
 	who, _ := j.GetString("actor")
 
-	ilog.Printf("updating honker accept: %s", who)
+	ilog.Printf("updating author accept: %s", who)
 	db := opendatabase()
-	row := db.QueryRow("select name, folxid from honkers where userid = ? and xid = ? and flavor in ('presub')",
+	row := db.QueryRow("select name, folxid from authors where userid = ? and xid = ? and flavor in ('presub')",
 		user.ID, who)
 	var name, folxid string
 	err := row.Scan(&name, &folxid)
 	if err != nil {
-		elog.Printf("can't get honker name: %s", err)
+		elog.Printf("can't get author name: %s", err)
 		return
 	}
 	_, err = stmtUpdateFlavor.Exec("sub", folxid, user.ID, name, who, "presub")
 	if err != nil {
-		elog.Printf("error updating honker: %s", err)
+		elog.Printf("error updating author: %s", err)
 		return
 	}
 }
@@ -1911,20 +1911,20 @@ func followyou2(user *UserProfile, j junk.Junk) {
 func nofollowyou2(user *UserProfile, j junk.Junk) {
 	who, _ := j.GetString("actor")
 
-	ilog.Printf("updating honker reject: %s", who)
+	ilog.Printf("updating author reject: %s", who)
 	db := opendatabase()
-	row := db.QueryRow("select name, folxid from honkers where userid = ? and xid = ? and flavor in ('presub', 'sub')",
+	row := db.QueryRow("select name, folxid from authors where userid = ? and xid = ? and flavor in ('presub', 'sub')",
 		user.ID, who)
 	var name, folxid string
 	err := row.Scan(&name, &folxid)
 	if err != nil {
-		elog.Printf("can't get honker name: %s", err)
+		elog.Printf("can't get author name: %s", err)
 		return
 	}
 	_, err = stmtUpdateFlavor.Exec("unsub", folxid, user.ID, name, who, "presub")
 	_, err = stmtUpdateFlavor.Exec("unsub", folxid, user.ID, name, who, "sub")
 	if err != nil {
-		elog.Printf("error updating honker: %s", err)
+		elog.Printf("error updating author: %s", err)
 		return
 	}
 }

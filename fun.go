@@ -84,9 +84,9 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 		if local && h.What != "shared" {
 			h.Text = re_memes.ReplaceAllString(h.Text, "")
 		}
-		h.Username, h.Handle = handles(h.Honker)
+		h.Username, h.Handle = handles(h.Author)
 		if !local {
-			short := shortname(userid, h.Honker)
+			short := shortname(userid, h.Author)
 			if short != "" {
 				h.Username = short
 			} else {
@@ -100,7 +100,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 			if user.Options.MentionAll {
 				hset := []string{"@" + h.Handle}
 				for _, a := range h.Audience {
-					if a == h.Honker || a == user.URL {
+					if a == h.Author || a == user.URL {
 						continue
 					}
 					_, hand := handles(a)
@@ -110,7 +110,7 @@ func reverbolate(userid int64, honks []*ActivityPubActivity) {
 					}
 				}
 				h.Handles = strings.Join(hset, " ")
-			} else if h.Honker != user.URL {
+			} else if h.Author != user.URL {
 				h.Handles = "@" + h.Handle
 			}
 		}
@@ -487,13 +487,13 @@ func quickrename(s string, userid int64) string {
 }
 
 var shortnames = cache.New(cache.Options{Filler: func(userid int64) (map[string]string, bool) {
-	honkers := gethonkers(userid)
+	authors := getAuthors(userid)
 	m := make(map[string]string)
-	for _, h := range honkers {
-		m[h.XID] = h.Name
+	for _, a := range authors {
+		m[a.XID] = a.Name
 	}
 	return m, true
-}, Invalidator: &honkerinvalidator})
+}, Invalidator: &authorInvalidator})
 
 func shortname(userid int64, xid string) string {
 	var m map[string]string
@@ -505,13 +505,13 @@ func shortname(userid int64, xid string) string {
 }
 
 var fullnames = cache.New(cache.Options{Filler: func(userid int64) (map[string]string, bool) {
-	honkers := gethonkers(userid)
-	m := make(map[string]string)
-	for _, h := range honkers {
-		m[h.Name] = h.XID
+	authors := getAuthors(userid)
+	m := map[string]string{}
+	for _, a := range authors {
+		m[a.Name] = a.XID
 	}
 	return m, true
-}, Invalidator: &honkerinvalidator})
+}, Invalidator: &authorInvalidator})
 
 func fullname(name string, userid int64) string {
 	var m map[string]string

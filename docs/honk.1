@@ -31,12 +31,12 @@ For other documentation, refer to the
 .Pp
 This manual is still incomplete.
 It'll get there eventually.
-.Ss Honkers
+.Ss Authors
 Initially, there won't be much to see after logging in.
 In order to receive regular updates from other users, they must first
-be added to one's honker collection.
+be added to one's authors' collection.
 Begin at the
-.Pa honkers
+.Pa authors
 tab.
 The
 .Ar url
@@ -53,7 +53,7 @@ field is optional and will be automatically inferred.
 The
 .Ar notes
 field is reserved for user remarks.
-Fellow honkers may be added to one or more
+Fellow authors may be added to one or more
 .Ar combos
 to suit one's organizational preferences.
 These are accessed via the
@@ -61,18 +61,18 @@ These are accessed via the
 tab and allow easy access to particular groupings.
 The special combo name of one hyphen
 .Sq -
-will exclude a honker's posts from the primary feed.
+will exclude a author's posts from the primary feed.
 .Pp
 It is also possible to skip subscribing.
 In this case, regular posts are not received, but replies and posts fetched
 via other means will appear in the relevant combos.
 .Pp
-In addition to honkers, it is possible to subscribe to a hashtag collection.
+In addition to authors, it is possible to subscribe to a hashtag collection.
 (Where supported.)
 Enter the collection URL for
 .Ar url .
 .Pp
-Separately, hashtags may be added to a combo by creating a honker with a
+Separately, hashtags may be added to a combo by creating a author with a
 .Ar url
 of the desired hashtag (including #).
 Several hashtags may thus be collected in a single combo.
@@ -80,7 +80,7 @@ Several hashtags may thus be collected in a single combo.
 The primary feed is accessed via the
 .Pa home
 tab.
-It will contain posts from all honkers except those specifically excluded.
+It will contain posts from all authors except those specifically excluded.
 Posts mentioning the user, both followed and not, are collected under the
 .Pa @me
 tab.
@@ -92,7 +92,7 @@ subheading, and the
 .Pa events
 page which lists only events.
 .Pp
-Individual honks contain a visual representation of the honker's ID,
+Individual honks contain a visual representation of the author's ID,
 their name, the activity (with a link back to origin), a link to the
 parent post if applicable, and the thread identifier.
 A red border indicates the honk is not public.
@@ -143,17 +143,17 @@ section of the manual for details of honk composition.
 Find old honks.
 It's basic substring match with a few extensions.
 The following keywords are supported:
-.Bl -tag -width honker
+.Bl -tag -width author
 .It site
 Substring match on the post domain name.
-.It honker
-Exact match, either AP actor or honker nickname.
+.It author
+Exact match, either AP actor or author nickname.
 .It -
 Negate term.
 .El
 .Pp
 Example:
-.Dl honker:goose big moose -footloose
+.Dl author:goose big moose -footloose
 This query will find honks by the goose about the big moose, but excluding
 those about footloose.
 .Ss Filtering
@@ -167,7 +167,7 @@ menu item.
 .Ss Xzone
 The
 .Pa xzone
-page lists recently seen honkers that are not otherwise tracked.
+page lists recently seen authors that are not otherwise tracked.
 It also allows the import of external objects via URL, either individual
 posts or actor URLs, in which case their recent outbox is imported.
 .Ss Account
@@ -217,7 +217,7 @@ Started March 2019.
 .Sh AUTHORS
 .An Ted Unangst Lk https://honk.tedunangst.com/u/tedu @tedu@honk.tedunangst.com
 .Sh CAVEATS
-Completing some operations, such as subscribing to new honkers, requires an
+Completing some operations, such as subscribing to new authors, requires an
 aptitude for clipboard use and tab switching along with a steady hand.
 For the most part, these are infrequent operations, but they are also the
 first operations new users encounter.

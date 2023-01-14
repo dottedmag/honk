@@ -287,11 +287,11 @@ func matchfilterX(h *ActivityPubActivity, f *Filter) string {
 	match := true
 	if match && f.Actor != "" {
 		match = false
-		if f.Actor == h.Honker || f.Actor == h.Oonker {
+		if f.Actor == h.Author || f.Actor == h.Oonker {
 			match = true
 			rv = f.Actor
 		}
-		if !match && (f.Actor == originate(h.Honker) ||
+		if !match && (f.Actor == originate(h.Author) ||
 			f.Actor == originate(h.Oonker) ||
 			f.Actor == originate(h.XID)) {
 			match = true
@@ -345,8 +345,8 @@ func rejectxonk(xonk *ActivityPubActivity) bool {
 	var m arejectmap
 	rejectcache.Get(xonk.UserID, &m)
 	filts := m[rejectAnyKey]
-	filts = append(filts, m[xonk.Honker]...)
-	filts = append(filts, m[originate(xonk.Honker)]...)
+	filts = append(filts, m[xonk.Author]...)
+	filts = append(filts, m[originate(xonk.Author)]...)
 	filts = append(filts, m[xonk.Oonker]...)
 	filts = append(filts, m[originate(xonk.Oonker)]...)
 	for _, a := range xonk.Audience {
